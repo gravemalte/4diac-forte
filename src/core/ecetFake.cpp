@@ -16,56 +16,50 @@
 
 CFakeEventExecutionThread::CFakeEventExecutionThread() :
     CEventChainExecutionThread(){
-  setDefaultCallbackForNewEventChain();
-  setDefaultCallbackForEventTrigger();
+  mProcessEventCallback = [this](TEventEntry paEvent){
+    paEvent.mFB->receiveInputEvent(paEvent.mPortId, this);
+  };
+  removeExternalControl();
+}
+
+void CFakeEventExecutionThread::removeExternalControl() {
+  mIsRemoteEnabled = false;      
+  resumeSelfSuspend();
+}
+
+void CFakeEventExecutionThread::takeExternalControl() {
+  mIsRemoteEnabled = true;
+}
+
+void CFakeEventExecutionThread::setRemoteCallbackForEventTriggering(HandleEvent paCallback) {
+  mProcessEventCallback = paCallback;
 }
 
 void CFakeEventExecutionThread::triggerNextEvent(){
+  // if remote is not enabled, we don't manually trigger events
+  if(!mIsRemoteEnabled){
+    return;
+  }
+
+  // manually triggering events, is similar to the regular one but: 
+  // - no external events are handled 
+  // - if no events are available, the function returns instead of suspending itself
   auto event = mEventList.pop();
   if(nullptr == event){
     return;
   }
-
-  if(!mProcessEventCallback.has_value()){
-    return;
-  }
-  mProcessEventCallback.value()(*event);
-}
-
-void CFakeEventExecutionThread::setCallbackForEventTriggering(std::optional<HandleEvent> paCallback) {
-  mProcessEventCallback = paCallback;
-}
-
-void CFakeEventExecutionThread::setDefaultCallbackForEventTrigger() {
-  mProcessEventCallback = [this](TEventEntry paEvent){
-    paEvent.mFB->receiveInputEvent(paEvent.mPortId, this);
-  };
+  mProcessEventCallback(*event);
 }
 
 void CFakeEventExecutionThread::startEventChain(TEventEntry paEvent) {
-  if(!mNewEventChainCallback.has_value()){
+  // if remote is enabled, external events are inhibited
+  if(mIsRemoteEnabled){
     return;
   }
-  mNewEventChainCallback.value()(paEvent);
+  CEventChainExecutionThread::startEventChain(paEvent);
 }
 
-void CFakeEventExecutionThread::setCallbackForNewEventChain(std::optional<HandleEvent> paCallback) {
-  mNewEventChainCallback = paCallback;
-}
-
-void CFakeEventExecutionThread::setDefaultCallbackForNewEventChain(){
-  mNewEventChainCallback = [this](TEventEntry paEvent){
-    CEventChainExecutionThread::startEventChain(paEvent);
-  };
-}
-
-void CFakeEventExecutionThread::removeExternalControl() {
-  setDefaultCallbackForNewEventChain();
-  setDefaultCallbackForEventTrigger();
-  mIsControlledFromOutside = false;      
-  resumeSelfSuspend();
-}
-
+// remote methods
 void CFakeEventExecutionThread::insertFront(TEventEntry paEvent){
   // the ring buffer does not have a way to insert in the front,
   // so we create a new one and push the event first there and then the rest
@@ -82,6 +76,11 @@ void CFakeEventExecutionThread::insertFront(TEventEntry paEvent){
 }
 
 void CFakeEventExecutionThread::removeFromBack(size_t paNumberOfItemsToRemove){
+ // if remote is not enabled, we don't manually remove events
+  if(!mIsRemoteEnabled){
+    return;
+  }
+
   std::vector<TEventEntry> temp;
   while(!mEventList.isEmpty()){
     temp.push_back(*mEventList.pop());
@@ -106,13 +105,33 @@ std::optional<TEventEntry> CFakeEventExecutionThread::getNextEvent(){
   return *nextEvent;
 }
 
-// we don't need the complexities of a separate thread, so 
-// the funtion just set to sleep when is controlled from outside
 void CFakeEventExecutionThread::run(){
   while(isAlive()){
-    if(mIsControlledFromOutside){
+    if(mIsRemoteEnabled){
       selfSuspend();
-    } 
+      if(mIsRemoteEnabled){
+        continue;
+      }
+    }
+    if(auto nextEvent = getNextEvent(); nextEvent.has_value() && mBreakpoints.count(nextEvent.value()) != 0){
+      takeExternalControl();
+      mBreakpointWasHit(nextEvent.value());
+      continue;
+    }
     CEventChainExecutionThread::mainRun();
   }
+}
+
+// Breakpoint methods
+
+void CFakeEventExecutionThread::addBreakpoint(TEventEntry paBreakpoint){
+  mBreakpoints.insert(paBreakpoint);
+}
+
+void CFakeEventExecutionThread::removeBreakpoint(TEventEntry paBreakpoint){
+  mBreakpoints.erase(paBreakpoint);
+}
+
+void CFakeEventExecutionThread::setBreakpointHitCallback(HandleEvent paCallback) {
+  mBreakpointWasHit = paCallback;
 }
