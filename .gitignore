@@ -31,3 +31,7 @@ file_list.txt
 /.vscode/
 /.vs/
 /.idea/
+
+# clangd
+.cache/
+compile_commands.json
