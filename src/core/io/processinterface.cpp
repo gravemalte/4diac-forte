@@ -1,6 +1,7 @@
 /*******************************************************************************
  * Copyright (c) 2016, 2025 Johannes Messmer (admin@jomess.com), fortiss GmbH,
  *                          Johannes Kepler University Linz, Thomas Öllinger
+ *                          HR Agrartechnik GmbH
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -83,6 +84,7 @@ bool ProcessInterface::deinitialise() {
   // Deregister interface
   if(mIsListening) {
     IOMapper::getInstance().deregisterObserver(this);
+    mIsListening = false; // we are deregistered ! 
   }
 
   return !mIsReady;
@@ -204,6 +206,13 @@ void ProcessInterface::onHandle(IOHandle* paHandle) {
   } else {
     QO() = CIEC_BOOL(write());
   }
+}
+
+EMGMResponse ProcessInterface::changeExecutionState(EMGMCommandType paCommand) {
+  if(EMGMCommandType::Kill == paCommand) {
+    deinitialise();
+  }
+  return CFunctionBlock::changeExecutionState(paCommand);
 }
 
 void ProcessInterface::dropHandle() {
