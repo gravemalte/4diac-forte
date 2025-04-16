@@ -636,13 +636,6 @@ void CFunctionBlock::traceInputEvent(TEventID paEIID){
   }
 }
 
-void CFunctionBlock::traceOutputEvent(TEventID paEOID){
-  if(auto& tracer = getResource()->getTracer(); tracer.isEnabled()){
-    tracer.traceSendOutputEvent(getFBTypeName() ?: "null",
-                                getFullQualifiedApplicationInstanceName('.').c_str() ?: "null",
-                                static_cast<uint64_t>(paEOID));
-  }
-}
 
 void CFunctionBlock::traceReadData(TPortId paDINum, CIEC_ANY& paValue) {
   if(auto& tracer = getResource()->getTracer(); tracer.isEnabled()){

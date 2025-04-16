@@ -299,9 +299,8 @@ class CFunctionBlock : public forte::core::CFBContainer {
       FORTE_TRACE("InputEvent: Function Block (%s) got event: %d (maxid: %d)\n", CStringDictionary::get(getInstanceNameId()), paEIID, getFBInterfaceSpec().mNumEIs - 1);
 
       #ifdef FORTE_TRACE_CTF
-        traceInputEvent(paEIID);
-      #endif
-
+          traceInputEvent(paEIID);
+      #endif // FORTE_TRACE_CTF
       if(E_FBStates::Running == getState()){
         if(paEIID < getFBInterfaceSpec().mNumEIs) {
           readInputData(paEIID);
@@ -467,11 +466,10 @@ class CFunctionBlock : public forte::core::CFBContainer {
      */
     void sendOutputEvent(TEventID paEO, CEventChainExecutionThread * const paECET){
       FORTE_TRACE("OutputEvent: Function Block sending event: %d (maxid: %d)\n", paEO, getFBInterfaceSpec().mNumEOs - 1);
-
+      
       #ifdef FORTE_TRACE_CTF
-        traceOutputEvent(paEO);
-      #endif
-
+        traceOutputEvent(paEO, paECET);
+      #endif // FORTE_TRACE_CTF
       if(paEO < getFBInterfaceSpec().mNumEOs) {
         writeOutputData(paEO);
         getEOConUnchecked(static_cast<TPortId>(paEO))->triggerEvent(paECET);
@@ -687,7 +685,7 @@ class CFunctionBlock : public forte::core::CFBContainer {
 
 #ifdef FORTE_TRACE_CTF
     void traceInputEvent(TEventID paEIID);
-    void traceOutputEvent(TEventID paEOID);
+    void traceOutputEvent(TEventID paEOID, CEventChainExecutionThread * const paECET);
     void traceReadData(TPortId paDINum, CIEC_ANY& paValue);
     void traceWriteData(TPortId paDONum, CIEC_ANY& paValue);
 #endif
@@ -715,6 +713,10 @@ class CFunctionBlock : public forte::core::CFBContainer {
 #ifdef FORTE_FMU
     friend class fmuInstance;
 #endif //FORTE_FMU
+
+#ifdef FORTE_REPLAY_DEVICE
+    friend class CResourceReplayer;
+#endif // FORTE_REPLAY_DEVICE
 };
 
 #define FUNCTION_BLOCK_CTOR(fbclass) \

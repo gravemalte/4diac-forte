@@ -1,14 +1,25 @@
-#ifndef _FORTE_TESTS_CORE_TRACE_TRACE_READER_SINK_H_
-#define _FORTE_TESTS_CORE_TRACE_TRACE_READER_SINK_H_
+/*******************************************************************************
+ * Copyright (c) 2025 Jose Cabral
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *   Jose Cabral- initial API and implementation and/or initial documentation
+ *******************************************************************************/
+
+#pragma once
 
 #include <string>
 #include <vector>
 
 #include <babeltrace2/babeltrace.h>
 
-#include "trace/EventMessage.h"
+#include "trace/internal/EventMessage.h"
 
-namespace forte {
+namespace forte::trace::reader {
   /**
    * Used with the babeltrace2 library to read event messages from it and transform them 
    * into EventMessage objects
@@ -33,6 +44,4 @@ namespace forte {
 
     bt_message_iterator *mMessageIterator{nullptr};
   };  
-}
-
-#endif // _FORTE_TESTS_CORE_TRACE_TRACE_READER_SINK_H_
+} // namespace forte::trace::reader
