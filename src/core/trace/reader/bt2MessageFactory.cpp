@@ -159,15 +159,14 @@ namespace {
     if (paEventType == "receiveInputEvent") {
       result.reset(new FBInputEventPayload(typeName, instanceName, readUint64Field(paField, "eventId")));
     } else if (paEventType == "sendOutputEvent") {
+#ifdef FORTE_TRACE_CTF_REPLAY_DEBUGGING
       std::vector<std::string> outputs;
       readDynamicArrayField(paField, "outputs", outputs);
-
-      result.reset(new FBOutputEventPayload(typeName, instanceName, readUint64Field(paField, "eventId")
-#ifdef FORTE_TRACE_CTF_REPLAY_DEBUGGING
-                                                                        ,
-                                            readUint64Field(paField, "eventCounter"), outputs
+      result.reset(new FBOutputEventPayload(typeName, instanceName, readUint64Field(paField, "eventId"),
+                                            readUint64Field(paField, "eventCounter"), outputs));
+#else
+      result.reset(new FBOutputEventPayload(typeName, instanceName, readUint64Field(paField, "eventId")));
 #endif // FORTE_TRACE_CTF_REPLAY_DEBUGGING
-                                            ));
     } else if (paEventType == "inputData" || paEventType == "outputData") {
       result.reset(new FBDataPayload(typeName, instanceName, getDataId(paField), getValue(paField)));
     } else if (paEventType == "instanceData") {

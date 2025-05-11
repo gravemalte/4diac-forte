@@ -10,20 +10,20 @@
  *   Jose Cabral- initial API and implementation and/or initial documentation
  *******************************************************************************/
 
-#include <thread>
 #include <functional>
+#include <thread>
 
 #include <babeltrace2/babeltrace.h>
 #include <boost/test/unit_test.hpp>
 
-#include "config.h"
+#include "../fbtests/fbtesterglobalfixture.h"
 #include "common.h"
+#include "config.h"
+#include "core/trace/internal/EventMessage.h"
 #include "core/trace/reader/utils.h"
 #include "device.h"
 #include "ecet.h"
-#include "core/trace/internal/EventMessage.h"
 #include "trace/barectf_platform_forte.h"
-#include "../fbtests/fbtesterglobalfixture.h"
 
 USE_STRING_ID(COLD)
 USE_STRING_ID(Counter)
@@ -90,8 +90,18 @@ BOOST_AUTO_TEST_CASE(sequential_events_test) {
 
   std::unordered_map<std::string, std::vector<EventMessage>> expectedMessages;
 
-  auto addInitiaOrFinalEvent = [](std::vector<EventMessage> &paMessages) {
+  auto eventCounter = 0; // used only for replay debugging, but it's easier to keep here instaed of extra #ifdef
+
+  auto addInitiaOrFinalEvent = [&eventCounter](std::vector<EventMessage> &paMessages, bool paIsInitial) {
     paMessages.emplace_back("receiveInputEvent", std::make_unique<FBInputEventPayload>("E_RESTART", "START", 65534), 0);
+    paMessages.emplace_back("sendOutputEvent",
+                            std::make_unique<FBOutputEventPayload>("E_RESTART", "START", paIsInitial ? 0 : 2
+#ifdef FORTE_TRACE_CTF_REPLAY_DEBUGGING
+                                                                   ,
+                                                                   eventCounter, std::vector<std::string>{}
+#endif // FORTE_TRACE_CTF_REPLAY_DEBUGGING
+                                                                   ),
+                            0);
   };
 
   // device resource has no events
@@ -101,26 +111,17 @@ BOOST_AUTO_TEST_CASE(sequential_events_test) {
   expectedMessages[CStringDictionary::get(STRID(EMB_RES))] = {};
 
   auto &embResMessages = expectedMessages[CStringDictionary::get(STRID(EMB_RES))];
-  addInitiaOrFinalEvent(embResMessages);
-  addInitiaOrFinalEvent(embResMessages);
+  addInitiaOrFinalEvent(embResMessages, true);
+  addInitiaOrFinalEvent(embResMessages, false);
 
   // resource with example FBs
   expectedMessages[CStringDictionary::get(resourceName)] = {};
 
   auto &resourceMessages = expectedMessages[CStringDictionary::get(resourceName)];
 
-  auto eventCounter = 0;
-
   // timestamp cannot properly be tested, so setting everythin to zero
-  addInitiaOrFinalEvent(resourceMessages);
-  resourceMessages.emplace_back("sendOutputEvent",
-                                std::make_unique<FBOutputEventPayload>("E_RESTART", "START", 0
-#ifdef FORTE_TRACE_CTF_REPLAY_DEBUGGING
-                                                                       ,
-                                                                       eventCounter, std::vector<std::string>{}),
-                                0
-#endif // FORTE_TRACE_CTF_REPLAY_DEBUGGING
-  );
+  addInitiaOrFinalEvent(resourceMessages, true);
+
   eventCounter++;
 
   resourceMessages.emplace_back("receiveInputEvent", std::make_unique<FBInputEventPayload>("E_CTU", "Counter", 0), 0);
@@ -131,15 +132,15 @@ BOOST_AUTO_TEST_CASE(sequential_events_test) {
                                               std::vector<std::string>{}),
       0);
 
-  resourceMessages.emplace_back(
-      "sendOutputEvent",
-      std::make_unique<FBOutputEventPayload>("E_CTU", "Counter", 0
+  resourceMessages.emplace_back("sendOutputEvent",
+                                std::make_unique<FBOutputEventPayload>("E_CTU", "Counter", 0
 #ifdef FORTE_TRACE_CTF_REPLAY_DEBUGGING
-                                             ,
-                                             eventCounter, std::vector<std::string>{"TRUE", "1"}),
-      0
+                                                                       ,
+                                                                       eventCounter,
+                                                                       std::vector<std::string>{"TRUE", "1"}
 #endif // FORTE_TRACE_CTF_REPLAY_DEBUGGING
-  );
+                                                                       ),
+                                0);
   resourceMessages.emplace_back("outputData", std::make_unique<FBDataPayload>("E_CTU", "Counter", 0, "TRUE"), 0);
   resourceMessages.emplace_back("outputData", std::make_unique<FBDataPayload>("E_CTU", "Counter", 1, "1"), 0);
   eventCounter++;
@@ -156,10 +157,10 @@ BOOST_AUTO_TEST_CASE(sequential_events_test) {
                                 std::make_unique<FBOutputEventPayload>("E_SWITCH", "Switch", 1
 #ifdef FORTE_TRACE_CTF_REPLAY_DEBUGGING
                                                                        ,
-                                                                       eventCounter, std::vector<std::string>{}),
-                                0
+                                                                       eventCounter, std::vector<std::string>{}
 #endif // FORTE_TRACE_CTF_REPLAY_DEBUGGING
-  );
+                                                                       ),
+                                0);
   eventCounter++;
 
   resourceMessages.emplace_back("receiveInputEvent", std::make_unique<FBInputEventPayload>("E_CTU", "Counter", 1), 0);
@@ -169,10 +170,20 @@ BOOST_AUTO_TEST_CASE(sequential_events_test) {
                                               std::vector<std::string>{"TRUE", "1"}, std::vector<std::string>{},
                                               std::vector<std::string>{}),
       0);
+
+  resourceMessages.emplace_back("sendOutputEvent",
+                                std::make_unique<FBOutputEventPayload>("E_CTU", "Counter", 1
+#ifdef FORTE_TRACE_CTF_REPLAY_DEBUGGING
+                                                                       ,
+                                                                       eventCounter,
+                                                                       std::vector<std::string>{"TRUE", "1"}
+#endif // FORTE_TRACE_CTF_REPLAY_DEBUGGING
+                                                                       ),
+                                0);
   resourceMessages.emplace_back("outputData", std::make_unique<FBDataPayload>("E_CTU", "Counter", 0, "FALSE"), 0);
   resourceMessages.emplace_back("outputData", std::make_unique<FBDataPayload>("E_CTU", "Counter", 1, "0"), 0);
 
-  addInitiaOrFinalEvent(resourceMessages);
+  addInitiaOrFinalEvent(resourceMessages, false);
 
   auto ctfMessages = forte::trace::reader::utils::getEventMessages(CTF_OUTPUT_DIR).value();
 
