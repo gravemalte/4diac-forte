@@ -3,9 +3,9 @@
 
 void CFunctionBlock::traceOutputEvent(TEventID paEOID, CEventChainExecutionThread *const) {
   if (auto &tracer = getResource()->getTracer(); tracer.isEnabled()) {
+    auto typeName = getFBTypeName();
 
-    tracer.traceSendOutputEvent(getFBTypeName() ?: "null",
-                                getFullQualifiedApplicationInstanceName('.').c_str() ?: "null",
+    tracer.traceSendOutputEvent(typeName ? typeName : "null", getFullQualifiedApplicationInstanceName('.').c_str(),
                                 static_cast<uint64_t>(paEOID));
   }
 }

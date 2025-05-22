@@ -516,8 +516,8 @@ void CFunctionBlock::toString(std::string &paTargetBuf) const {
 #ifdef FORTE_TRACE_CTF
 void CFunctionBlock::traceInputEvent(TEventID paEIID) {
   if (auto &tracer = getResource()->getTracer(); tracer.isEnabled()) {
-    tracer.traceReceiveInputEvent(getFBTypeName() ?: "null",
-                                  getFullQualifiedApplicationInstanceName('.').c_str() ?: "null",
+    auto typeName = getFBTypeName();
+    tracer.traceReceiveInputEvent(typeName ? typeName : "null", getFullQualifiedApplicationInstanceName('.').c_str(),
                                   static_cast<uint64_t>(paEIID));
     traceInstanceData();
   }
@@ -525,20 +525,22 @@ void CFunctionBlock::traceInputEvent(TEventID paEIID) {
 
 void CFunctionBlock::traceReadData(TPortId paDINum, CIEC_ANY &paValue) {
   if (auto &tracer = getResource()->getTracer(); tracer.isEnabled()) {
+    auto typeName = getFBTypeName();
+
     std::string valueString;
-    valueString.reserve(paValue.getToStringBufferSize());
-    paValue.toString(valueString.data(), valueString.capacity());
-    tracer.traceInputData(getFBTypeName() ?: "null", getFullQualifiedApplicationInstanceName('.').c_str() ?: "null",
+    paValue.toString(valueString);
+    tracer.traceInputData(typeName ? typeName : "null", getFullQualifiedApplicationInstanceName('.').c_str(),
                           static_cast<uint64_t>(paDINum), valueString.c_str());
   }
 }
 
 void CFunctionBlock::traceWriteData(TPortId paDONum, CIEC_ANY &paValue) {
   if (auto &tracer = getResource()->getTracer(); tracer.isEnabled()) {
+    auto typeName = getFBTypeName();
+
     std::string valueString;
-    valueString.reserve(paValue.getToStringBufferSize());
-    paValue.toString(valueString.data(), valueString.capacity());
-    tracer.traceOutputData(getFBTypeName() ?: "null", getFullQualifiedApplicationInstanceName('.').c_str() ?: "null",
+    paValue.toString(valueString);
+    tracer.traceOutputData(typeName ? typeName : "null", getFullQualifiedApplicationInstanceName('.').c_str(),
                            static_cast<uint64_t>(paDONum), valueString.c_str());
   }
 }

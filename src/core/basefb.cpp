@@ -18,6 +18,7 @@
  *******************************************************************************/
 
 #include "basefb.h"
+#include "resource.h"
 #include "string_utils.h"
 
 TPortId SInternalVarsInformation::getVarId(CStringDictionary::TStringId paInternalName) const {
@@ -83,7 +84,7 @@ void CBaseFB::toString(std::string &paTargetBuf) const {
 };
 
 #ifdef FORTE_TRACE_CTF
-void CBasicFB::traceInstanceData() {
+void CBaseFB::traceInstanceData() {
   std::vector<std::string> inputs(getFBInterfaceSpec().mNumDIs);
   std::vector<std::string> outputs(getFBInterfaceSpec().mNumDOs);
   std::vector<std::string> internals(cmVarInternals ? cmVarInternals->mNumIntVars : 0);
@@ -96,24 +97,21 @@ void CBasicFB::traceInstanceData() {
   for (TPortId i = 0; i < inputs.size(); ++i) {
     CIEC_ANY *value = getDI(i);
     std::string &valueString = inputs[i];
-    valueString.reserve(value->getToStringBufferSize());
-    value->toString(valueString.data(), valueString.capacity());
+    value->toString(valueString);
     inputs_c_str[i] = valueString.c_str();
   }
 
   for (TPortId i = 0; i < outputs.size(); ++i) {
     CIEC_ANY *value = getDO(i);
     std::string &valueString = outputs[i];
-    valueString.reserve(value->getToStringBufferSize());
-    value->toString(valueString.data(), valueString.capacity());
+    value->toString(valueString);
     outputs_c_str[i] = valueString.c_str();
   }
 
   for (TPortId i = 0; i < internals.size(); ++i) {
     CIEC_ANY *value = getVarInternal(i);
     std::string &valueString = internals[i];
-    valueString.reserve(value->getToStringBufferSize());
-    value->toString(valueString.data(), valueString.capacity());
+    value->toString(valueString);
     internals_c_str[i] = valueString.c_str();
   }
 
@@ -121,14 +119,14 @@ void CBasicFB::traceInstanceData() {
   for (auto child : getChildren()) {
     CFunctionBlock &value = static_cast<CFunctionBlock &>(*child);
     std::string &valueString = internalFbs[i];
-    valueString.reserve(value.getToStringBufferSize());
-    value.toString(valueString.data(), valueString.capacity());
+    value.toString(valueString);
     internalFbs_c_str[i] = valueString.c_str();
     ++i;
   }
 
+  auto typeName = getFBTypeName();
   getResource()->getTracer().traceInstanceData(
-      getFBTypeName() ?: "null", getFullQualifiedApplicationInstanceName('.').c_str() ?: "null",
+      typeName ? typeName : "null", getFullQualifiedApplicationInstanceName('.').c_str(),
       static_cast<uint32_t>(inputs.size()), inputs_c_str.data(), static_cast<uint32_t>(outputs.size()),
       outputs_c_str.data(), static_cast<uint32_t>(internals.size()), internals_c_str.data(),
       static_cast<uint32_t>(internalFbs.size()), internalFbs_c_str.data());
