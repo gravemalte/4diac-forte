@@ -22,6 +22,7 @@
  *                 - refactored for lower and upper bounds
  *                 - refactored array type structure
  *                 - add support for setting bounds
+ *                 - added lower and upper bound with dimension
  *******************************************************************************/
 
 #pragma once
@@ -485,6 +486,10 @@ class CIEC_ARRAY_DYNAMIC : public CIEC_ARRAY {
     [[nodiscard]] intmax_t getUpperBound() const override {
       return mUpperBound;
     }
+
+    [[nodiscard]] intmax_t getLowerBound(intmax_t paDimension) const override;
+
+    [[nodiscard]] intmax_t getUpperBound(intmax_t paDimension) const override;
 
     [[nodiscard]] constexpr iterator begin() {
       return iterator(mElementSize, mData);

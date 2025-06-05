@@ -15,6 +15,7 @@
  *      - add support for data types with different size
  *      - refactored array type structure
  *      - add support for setting bounds
+ *      - added lower and upper bound with dimension
  *******************************************************************************/
 #pragma once
 
@@ -36,6 +37,16 @@ class CIEC_ARRAY_VARIABLE : public CIEC_ARRAY_COMMON<T> {
     using CIEC_ARRAY_COMMON<T>::at;
     using CIEC_ARRAY_COMMON<T>::operator[];
     using CIEC_ARRAY_COMMON<T>::operator=;
+
+    /**
+     * @brief Construct an empty array
+     */
+    CIEC_ARRAY_VARIABLE() :
+        mLowerBound(0),
+        mUpperBound(-1),
+        mSize(0),
+        data() {
+    }
 
     /**
      * @brief Construct an array based on lower and upper bound
@@ -221,6 +232,38 @@ class CIEC_ARRAY_VARIABLE : public CIEC_ARRAY_COMMON<T> {
 
     [[nodiscard]] constexpr intmax_t getUpperBound() const override {
       return mUpperBound;
+    }
+
+    [[nodiscard]] constexpr intmax_t getLowerBound(intmax_t paDimension) const override {
+      if (paDimension == 1) {
+        return mLowerBound;
+      }
+      if (paDimension < 1) {
+        DEVLOG_ERROR("The dimension must not be less than 1\n");
+        return 0;
+      }
+      if constexpr (std::is_base_of_v<CIEC_ARRAY, T>) {
+        return data[0].getLowerBound(paDimension - 1);
+      } else {
+        DEVLOG_ERROR("The dimension is larger than the dimensions of the array\n");
+        return 0;
+      }
+    }
+
+    [[nodiscard]] constexpr intmax_t getUpperBound(intmax_t paDimension) const override {
+      if (paDimension == 1) {
+        return mUpperBound;
+      }
+      if (paDimension < 1) {
+        DEVLOG_ERROR("The dimension must not be less than 1\n");
+        return 0;
+      }
+      if constexpr (std::is_base_of_v<CIEC_ARRAY, T>) {
+        return data[0].getUpperBound(paDimension - 1);
+      } else {
+        DEVLOG_ERROR("The dimension is larger than the dimensions of the array\n");
+        return 0;
+      }
     }
 
     [[nodiscard]] constexpr size_t size() const override {

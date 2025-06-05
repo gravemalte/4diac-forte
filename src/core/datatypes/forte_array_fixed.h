@@ -15,6 +15,7 @@
  *      - add support for data types with different size
  *      - refactored array type structure
  *      - add support for setting bounds
+ *      - added lower and upper bound with dimension
  *******************************************************************************/
 #pragma once
 
@@ -185,6 +186,38 @@ class CIEC_ARRAY_FIXED : public CIEC_ARRAY_COMMON<T> {
 
     [[nodiscard]] constexpr intmax_t getUpperBound() const override {
       return upperBound;
+    }
+
+    [[nodiscard]] constexpr intmax_t getLowerBound(intmax_t paDimension) const override {
+      if (paDimension == 1) {
+        return lowerBound;
+      }
+      if (paDimension < 1) {
+        DEVLOG_ERROR("The dimension must not be less than 1\n");
+        return 0;
+      }
+      if constexpr (std::is_base_of_v<CIEC_ARRAY, T>) {
+        return data[0].getLowerBound(paDimension - 1);
+      } else {
+        DEVLOG_ERROR("The dimension is larger than the dimensions of the array\n");
+        return 0;
+      }
+    }
+
+    [[nodiscard]] constexpr intmax_t getUpperBound(intmax_t paDimension) const override {
+      if (paDimension == 1) {
+        return upperBound;
+      }
+      if (paDimension < 1) {
+        DEVLOG_ERROR("The dimension must not be less than 1\n");
+        return 0;
+      }
+      if constexpr (std::is_base_of_v<CIEC_ARRAY, T>) {
+        return data[0].getUpperBound(paDimension - 1);
+      } else {
+        DEVLOG_ERROR("The dimension is larger than the dimensions of the array\n");
+        return 0;
+      }
     }
 
     [[nodiscard]] constexpr size_t size() const override {

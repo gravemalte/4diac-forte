@@ -14,14 +14,17 @@
  *   Martin Jobst - refactored for common assignment operators
  *                - refactored array type structure
  *                - add support for setting bounds
+ *                - added lower and upper bound with dimension
  *   Markus Meingast, Alois Zoitl  - migrated data type toString to std::string
  *******************************************************************************/
 #pragma once
 
 #include <stddef.h>
+#include <inttypes.h>
 
 #include "forte_any_derived.h"
 #include "forte_any_int.h"
+#include "stringdict.h"
 
 /** \brief A common supertype for all CIEC_ARRAY variants, providing the minimal interface an array must provide
  */
@@ -53,6 +56,10 @@ class CIEC_ARRAY : public CIEC_ANY_DERIVED {
     [[nodiscard]] virtual intmax_t getLowerBound() const = 0;
 
     [[nodiscard]] virtual intmax_t getUpperBound() const = 0;
+
+    [[nodiscard]] virtual intmax_t getLowerBound(intmax_t paDimension) const = 0;
+
+    [[nodiscard]] virtual intmax_t getUpperBound(intmax_t paDimension) const = 0;
 
     [[nodiscard]] virtual size_t size() const = 0;
 
