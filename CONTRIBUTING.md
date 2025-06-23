@@ -11,7 +11,7 @@ IEC 61499 extends IEC 61131-3 by improving the encapsulation of software compone
 Its distribution functionality and the inherent support for dynamic reconfiguration provide the required infrastructure for Industrie 4.0 and industrial IoT applications.
 
 ### What is 4diac FORTE
-[4diac FORTE](https://eclipse.dev/4diac/en_rte.php) is a small portable implementation of an IEC 61499 runtime environment targeting small embedded control devices (16/32 Bit), implemented in C++. It supports online-reconfiguration of its applications and the real-time capable execution of all function block types provided by the IEC 61499 standard.
+[4diac FORTE](https://eclipse.dev/4diac/4diac_forte) is a small portable implementation of an IEC 61499 runtime environment targeting small embedded control devices (16/32 Bit), implemented in C++. It supports online-reconfiguration of its applications and the real-time capable execution of all function block types provided by the IEC 61499 standard.
 
 
 ## Setting up Your Eclipse and GitHub Account
