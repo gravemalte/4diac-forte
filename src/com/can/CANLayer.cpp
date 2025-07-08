@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
- *  Malte Grave - initial API and implementation and/or initial documentation
+ *  Malte Grave, Alexander Trojnin - initial API and implementation and/or initial documentation
  *******************************************************************************/
 
 #include <cerrno>
@@ -17,39 +17,50 @@
 #include <cstring>
 #include <fcntl.h>
 #include <linux/can.h>
+#include <memory>
 #include <string>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <vector>
 
-#include "CANLayer.h"
 #include "basecommfb.h"
 #include "comtypes.h"
 #include "datatype.h"
 #include "devlog.h"
 #include "forte_any.h"
 #include "forte_array.h"
+#include "string_utils.h"
+
+#include "CANLayer.h"
+#include "CANHandler.h"
 
 using namespace forte::com_infra;
 
 CCANComLayer::CCANComLayer(CComLayer *paUpperLayer, CBaseCommFB *paComFB)
     : CComLayer(paUpperLayer, paComFB) {}
 
-EComResponse CCANComLayer::openConnection(char *paLayerParameter) {
+EComResponse CCANComLayer::openConnection(char *paLayerParameter)
+{
   EComResponse eRetVal = e_InitInvalidId;
   CParameterParser parser(paLayerParameter, ';', eCANComParamterAmount);
-  if (eCANComParamterAmount != parser.parseParameters()) {
+  if (eCANComParamterAmount != parser.parseParameters())
+  {
     DEVLOG_ERROR("[CAN Layer] Parsing of the parameters failed.\n");
     return eRetVal;
   }
 
   SCANParameters can_params = setupCANInternals(parser);
 
-  switch (mFb->getComServiceType()) {
+  DEVLOG_DEBUG("[CAN Layer] Opening connection\n");
+
+  CFDSelectHandler::TFileDescriptor fd = socket(PF_CAN, SOCK_RAW | SOCK_NONBLOCK, CAN_RAW);
+
+  switch (mFb->getComServiceType())
+  {
   case e_Server:
     DEVLOG_ERROR("[CAN Layer] the layer only supports the PUB/SUB "
-                 "pattern. Please use a Publisher block to send data.");
+                  "pattern. Please use a Publisher block to send data.");
     eRetVal = e_InitTerminated;
     break;
   case e_Client:
@@ -58,26 +69,38 @@ EComResponse CCANComLayer::openConnection(char *paLayerParameter) {
     eRetVal = e_InitTerminated;
     break;
   case e_Publisher:
-    // is handled via sendData
+    // is only sendData
+    mFrame.can_id = can_params.CANId;
     break;
   case e_Subscriber:
-    // is handled via recvData
+    // is only recvData
+    rfilter.can_id = can_params.CANId;
+    rfilter.can_mask = CAN_SFF_MASK;
+    setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, &rfilter, sizeof(rfilter));
+    break;
+
+  default:
+    DEVLOG_ERROR("[CAN Layer] Invalid communication service type.\n");
+    eRetVal = e_InitTerminated;
     break;
   }
 
-  DEVLOG_DEBUG("[CAN Layer] Opening connection\n");
+  if (eRetVal != e_InitInvalidId)
+  {
+    return eRetVal;
+  }
 
-  CFDSelectHandler::TFileDescriptor fd = socket(PF_CAN, SOCK_RAW, CAN_RAW);
-
-  if (CFDSelectHandler::scmInvalidFileDescriptor == fd) {
+  if (CFDSelectHandler::scmInvalidFileDescriptor == fd)
+  {
     DEVLOG_ERROR("[CAN Layer] Socket can't be created: %s\n", strerror(errno));
     return e_InitInvalidId;
   }
 
   std::strncpy(mIfr.ifr_name, can_params.interfaceName.c_str(), IFNAMSIZ - 1);
-  mIfr.ifr_name[IFNAMSIZ - 1] =
-      '\0'; // Ensure that null termination is added if input is too long.
-  if (-1 == ioctl(fd, SIOCGIFINDEX, &mIfr)) {
+  mIfr.ifr_name[IFNAMSIZ - 1] = '\0'; // Ensure that null termination is added if input is too long.
+  
+  if (-1 == ioctl(fd, SIOCGIFINDEX, &mIfr))
+  {
     DEVLOG_ERROR("[CAN Layer] Socket cannot be controlled. %s\n",
                  strerror(errno));
     close(fd);
@@ -88,90 +111,137 @@ EComResponse CCANComLayer::openConnection(char *paLayerParameter) {
   mAddr.can_family = AF_CAN;
   mAddr.can_ifindex = mIfr.ifr_ifindex;
 
-  if (-1 == bind(mCANSocket, (struct sockaddr *)&mAddr, sizeof(mAddr))) {
+  if (-1 == bind(mCANSocket, (struct sockaddr *)&mAddr, sizeof(mAddr)))
+  {
     DEVLOG_ERROR("[CAN Layer] Binding of the socket unsuccessful: %s\n",
                  strerror(errno));
     close(mCANSocket);
     return eRetVal;
   }
 
-  this->getExtEvHandler<CFDSelectHandler>().addComCallback(mCANSocket, this);
+  this->getExtEvHandler<CCANHandler>().addComCallback(mCANSocket, this);
   DEVLOG_DEBUG("[CAN Layer] Callback handler added.\n");
-
-  mFrame.can_id = can_params.CANId;
 
   eRetVal = e_InitOk;
   return eRetVal;
 }
 
-CCANComLayer::~CCANComLayer() { closeConnection(); }
+CCANComLayer::~CCANComLayer() {}
 
-void CCANComLayer::closeConnection() {
-  if (mCANSocket != CFDSelectHandler::scmInvalidFileDescriptor) {
+void CCANComLayer::closeConnection()
+{
+  if (mCANSocket != CFDSelectHandler::scmInvalidFileDescriptor)
+  {
     DEVLOG_DEBUG("[CAN Layer] Closing socket\n");
     close(mCANSocket);
     DEVLOG_DEBUG("[CAN Layer] Unregister layer\n");
-    this->getExtEvHandler<CFDSelectHandler>().removeComCallback(mCANSocket);
+    this->getExtEvHandler<CCANHandler>().removeComCallback(mCANSocket);
   }
 }
 
-EComResponse CCANComLayer::sendData(void *paData, unsigned int) {
-  auto *raw_data = static_cast<CIEC_ARRAY *>(
-      &(static_cast<CIEC_ANY **>(paData)[0]->unwrap()));
+EComResponse CCANComLayer::sendData(void *paData, unsigned int)
+{
+  EComResponse eRetVal = e_InitOk;
 
-  size_t size = raw_data->getToStringBufferSize();
-  DEVLOG_DEBUG("[CAN Layer] Size of the array is: %u.\n", size);
-  std::vector<char> buffer(size);
+  CIEC_ANY **apoSDs = mFb->getSDs();
+  size_t size = mFb->getNumSD(); 
 
-  int nLength = raw_data->toString(buffer.data(), size);
-  if (nLength <= 0) {
-    DEVLOG_ERROR("[CAN Layer] Copying of the raw data failed.");
-    return e_ProcessDataSendFailed;
+  auto data = std::make_unique<uint8_t[]>(size);
+
+  for (size_t i = 0; i < size; i++)
+  {
+    CIEC_ANY &sd(apoSDs[i]->unwrap());
+    data[i] = *sd.getConstDataPtr();
+    DEVLOG_DEBUG("[CAN Layer] send data[%d] = %d\n", i, data[i]);
   }
 
-  size_t offset = 0;
-  while (offset < size) {
+  eRetVal = e_ProcessDataOk;
 
-    mFrame.len = static_cast<uint8_t>(
+  size_t offset = 0;
+  while (offset < size && eRetVal == e_ProcessDataOk)
+  {
+
+    mFrame.can_dlc = static_cast<uint8_t>(
         (size - offset > CAN_MAX_DLEN) ? CAN_MAX_DLEN : (size - offset));
 
     // Clear old data and copy new chunk
     std::memset(mFrame.data, 0, CAN_MAX_DLEN);
-    std::memcpy(mFrame.data, buffer.data() + offset, mFrame.len);
+    std::memcpy(mFrame.data, &data[offset], mFrame.can_dlc);
 
-    offset += mFrame.len;
+    offset += mFrame.can_dlc;
 
     DEVLOG_DEBUG("[CAN Layer] Sending data ...\n");
-    if (write(mCANSocket, &mFrame, sizeof(struct can_frame)) < 0) {
+
+    if (write(mCANSocket, &mFrame, sizeof(struct can_frame)) < 0)
+    {
       DEVLOG_ERROR("CAN send failed: %s\n", strerror(errno));
-      return e_ProcessDataSendFailed;
+      eRetVal = e_ProcessDataSendFailed;
+      break;
     }
   }
 
   return e_ProcessDataOk;
 }
 
-EComResponse CCANComLayer::recvData(const void *paData, unsigned int paSize) {
-  return e_ProcessDataOk;
+EComResponse CCANComLayer::recvData(const void *paData, unsigned int paSize)
+{
+  DEVLOG_DEBUG("[CAN Layer] Receive data.\n");
+
+  m_eInterruptResp = e_Nothing;
+
+  if (mFb->getComServiceType() == e_Subscriber)
+  {
+    const can_frame *frame = (can_frame*)(paData);
+    memcpy(&mFrame, frame, sizeof(struct can_frame));
+
+    mFb->interruptCommFB(this);
+    m_eInterruptResp = e_ProcessDataOk;
+  }
+
+  return m_eInterruptResp;
 }
 
-EComResponse CCANComLayer::processInterrupt() { return e_ProcessDataOk; }
+EComResponse CCANComLayer::processInterrupt()
+{
+  DEVLOG_DEBUG("[CAN Layer] Interupt process.\n");
+
+  if (m_eInterruptResp == e_ProcessDataOk)
+  {
+    CIEC_ANY **apoRDs = mFb->getRDs();
+    size_t size_rd = mFb->getNumRD();
+
+    for (size_t i = 0; i < size_rd; i++)
+    {
+      CIEC_ANY &rd(apoRDs[i]->unwrap());
+      
+      if (i >= mFrame.can_dlc)
+      {
+        rd.setValue(CIEC_BYTE(0));
+      }
+      else
+      {
+        rd.setValue(CIEC_BYTE(mFrame.data[i]));
+      }
+    }
+  }
+
+  return m_eInterruptResp;
+}
 
 CCANComLayer::SCANParameters
-CCANComLayer::setupCANInternals(CParameterParser &parser) {
+CCANComLayer::setupCANInternals(CParameterParser &parser)
+{
   SCANParameters can_params;
 
   can_params.interfaceName =
       std::string(parser[eInterface], strlen(parser[eInterface]));
 
-  can_params.baudRate = static_cast<TForteInt32>(
-      forte::core::util::strtoul(parser[eBaudrate], nullptr, 10));
-  can_params.CANId = static_cast<TForteUInt32>(
+  can_params.CANId = static_cast<TForteUInt32>( \
       forte::core::util::strtoul(parser[eCANId], nullptr, 10));
 
   DEVLOG_DEBUG(
-      "[CAN Layer] Using interface: %s with Baudrate %u and CAN-ID: %u\n",
-      can_params.interfaceName.c_str(), can_params.baudRate, can_params.CANId);
+      "[CAN Layer] Using interface: %s and CAN-ID: %u\n",
+      can_params.interfaceName.c_str(), can_params.CANId);
 
   return can_params;
 }

@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: EPL-2.0
  *
  * Contributors:
- *  Malte Grave - initial API and implementation and/or initial documentation
+ *  Malte Grave, Alexander Trojnin - initial API and implementation and/or initial documentation
  *******************************************************************************/
 
 #pragma once
@@ -16,54 +16,59 @@
 #include <linux/can.h>
 #include <linux/can/raw.h>
 #include <net/if.h>
+
 #include <sockhand.h>
 
 #include "comlayer.h"
 #include "datatype.h"
-#include "fdselecthand.h"
 #include "gensockhand.h"
 #include "parameterParser.h"
+#include "string"
 
-namespace forte::com_infra {
+#include "CANHandler.h"
 
-class CCANComLayer : public CComLayer {
-public:
-  typedef FORTE_SOCKET_TYPE TCANSocketHandle;
+namespace forte::com_infra
+{
+  class CCANComLayer : public CComLayer
+  {
+  public:
+    typedef FORTE_SOCKET_TYPE TCANSocketHandle;
 
-  CCANComLayer(CComLayer *paUpperLayer, CBaseCommFB *paComFB);
-  ~CCANComLayer() override;
+    CCANComLayer(CComLayer *paUpperLayer, CBaseCommFB *paComFB);
+    ~CCANComLayer() override;
 
-  EComResponse sendData(void *paData, unsigned int paSize) override;
-  EComResponse recvData(const void *paData, unsigned int paSize) override;
+    EComResponse sendData(void *paData, unsigned int paSize) override;
+    EComResponse recvData(const void *paData, unsigned int paSize) override;
 
-  EComResponse openConnection(char *paLayerParameter) override;
+    EComResponse processInterrupt() override;
 
-  EComResponse processInterrupt() override;
+  private:
+    struct SCANParameters
+    {
+      std::string interfaceName;
+      TForteUInt32 CANId;
+    };
 
-  void closeConnection() override;
+    enum ECANCommunicationParameter
+    {
+      eInterface = 0,
+      eCANId = 1,
+      eCANComParamterAmount = 2
+    };
 
-private:
-  struct SCANParameters {
-    std::string interfaceName;
-    TForteInt32 baudRate;
-    TForteUInt32 CANId;
+    CFDSelectHandler::TFileDescriptor mCANSocket =
+        CFDSelectHandler::scmInvalidFileDescriptor;
+
+    EComResponse m_eInterruptResp;
+
+    struct sockaddr_can mAddr;
+    struct ifreq mIfr;
+    struct can_frame mFrame;
+    struct can_filter rfilter;
+
+    EComResponse openConnection(char *paLayerParameter) override;
+    void closeConnection() override;
+
+    SCANParameters setupCANInternals(CParameterParser &parser);
   };
-
-  enum ECANCommunicationParameter {
-    eInterface = 0,
-    eBaudrate = 1, // not used yet
-    eCANId = 2,
-    eCANComParamterAmount = 3
-  };
-
-  CFDSelectHandler::TFileDescriptor mCANSocket =
-      CFDSelectHandler::scmInvalidFileDescriptor;
-
-  struct sockaddr_can mAddr;
-  struct ifreq mIfr;
-  struct can_frame mFrame;
-
-  SCANParameters setupCANInternals(CParameterParser &parser);
-};
-
 } // namespace forte::com_infra
