@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Primetals Technologies Austria GmbH
+ * Copyright (c) 2024, 2025 Primetals Technologies Austria GmbH
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -60,10 +60,13 @@ class COPC_UA_AC_Layer : public COPC_UA_Layer {
     std::vector<UA_NodeId> mTypePropertyNodes;
     std::unique_ptr<CActionInfo> mMemberActionInfo;
 
+    bool mHasSeverityProperty = false;
+    int mMessageTextPortIndex = -1;
     std::unordered_map<std::string, UA_NodeId> mUAPropertyMap = {
         {"ClientUserId", UA_NODEID_NULL},
         {"ConditionName", UA_NODEID_NULL},
         {"SourceName", UA_NODEID_NULL},
+        {"Severity", UA_NODEID_NULL},
     };
 
     /**
@@ -79,6 +82,13 @@ class COPC_UA_AC_Layer : public COPC_UA_Layer {
     void closeConnection() override;
 
     UA_StatusCode triggerAlarm();
+
+    UA_StatusCode
+    setConditionField(UA_Server *paServer, UA_QualifiedName paQualifiedName, void *dataValue, UA_DataType *paDataType);
+    UA_StatusCode setConditionVariableFieldProperty(UA_Server *paServer,
+                                                    UA_QualifiedName paQualifiedName,
+                                                    void *dataValue,
+                                                    UA_DataType *paDataType);
 
     forte::com_infra::EComResponse
     initOPCUAType(UA_Server *paServer, const std::string &paTypeName, bool paIsPublisher);
@@ -111,6 +121,8 @@ class COPC_UA_AC_Layer : public COPC_UA_Layer {
                                   CIEC_ANY &paVariableType);
 
     forte::com_infra::EComResponse initializeMemberActions(const std::string &paParentBrowsePath);
+
+    void addNewNodeId(UA_NodeId *paNodeIdToAdd);
 
     bool isOPCUAObjectPresent(std::string &paBrowsePath);
 
