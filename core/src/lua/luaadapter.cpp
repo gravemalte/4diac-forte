@@ -11,7 +11,7 @@
  *   Alois Zoitl   - upgraded to new FB memory layout
  *******************************************************************************/
 
-#include "core/lua/luaadapter.h"
+#include "luaadapter.h"
 
 CLuaAdapter::CLuaAdapter(forte::core::StringId paInstanceNameId,
                          const CLuaAdapterTypeEntry *paTypeEntry,

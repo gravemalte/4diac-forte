@@ -11,25 +11,24 @@
  *   Alois Zoitl  - upgraded to new FB memory layout
  *******************************************************************************/
 
-#include "core/lua/luabfbtypeentry.h"
+#include "luabfbtypeentry.h"
 
-#include "core/lua/luaengine.h"
-#include "core/lua/luabfb.h"
-#include "core/lua/luatype.h"
+#include "luaengine.h"
+#include "luabfb.h"
+#include "luatype.h"
 
 CLuaBFBTypeEntry::CLuaBFBTypeEntry(forte::core::StringId paTypeNameId,
                                    const std::string &paLuaScriptAsString,
                                    SFBInterfaceSpec &paInterfaceSpec,
-                                   SInternalVarsInformation &paInternalVarsInformation) :
+                                   std::span<const forte::core::StringId> varInternalNames) :
     CFBTypeEntry(paTypeNameId, nullptr, &m_interfaceSpec),
     cmLuaScriptAsString(paLuaScriptAsString),
     m_interfaceSpec(paInterfaceSpec),
-    m_internalVarsInformation(paInternalVarsInformation) {
+    mVarInternalNames(varInternalNames) {
 }
 
 CLuaBFBTypeEntry::~CLuaBFBTypeEntry() {
   deleteInterfaceSpec(m_interfaceSpec);
-  deleteInternalVarsInformation(m_internalVarsInformation);
 }
 
 CLuaBFBTypeEntry *CLuaBFBTypeEntry::createLuaFBTypeEntry(forte::core::StringId paTypeNameId,

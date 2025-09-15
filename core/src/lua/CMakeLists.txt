@@ -12,6 +12,8 @@
 # core/lua
 # ############################################################################
 
+option(FORTE_DYNAMIC_TYPE_LOAD "Enable FORTE dynamic types powered by Lua" FALSE)
+
 if (NOT FORTE_DYNAMIC_TYPE_LOAD)
     return()
 endif ()

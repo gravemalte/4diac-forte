@@ -1,6 +1,7 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2024 fortiss GmbH, Johannes Kepler University Linz
+ * Copyright (c) 2015, 2025 fortiss GmbH, Johannes Kepler University Linz
  *                          Martin Erich Jobst
+ *                          Malte Grave
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -12,14 +13,14 @@
  *   Martin Jobst - initial API and implementation and/or initial documentation
  *   Alois Zoitl  - upgraded to new FB memory layout
  *   Martin Jobst - add dynamic internal variable setup from CBasicFB
+ *   Malte Grave -  modernized the Lua infrastructure
  *******************************************************************************/
 
-#ifndef SRC_CORE_LUABFB_H_
-#define SRC_CORE_LUABFB_H_
+#pragma once
 
 #include "forte/genfb.h"
 #include "forte/basicfb.h"
-#include "core/lua/luabfbtypeentry.h"
+#include "luabfbtypeentry.h"
 
 class CIEC_ANY;
 
@@ -83,7 +84,7 @@ class CLuaBFB : public CGenFunctionBlock<CBasicFB> {
 
     void createVarInternals();
 
-    static size_t calculateInternalVarsDataSize(const SInternalVarsInformation &paVarInternals);
+    // static size_t calculateInternalVarsDataSize(const SInternalVarsInformation &paVarInternals);
 
     CIEC_ANY *getVarInternal(size_t paVarIntNum) override {
       return mInternals[paVarIntNum];
@@ -92,5 +93,3 @@ class CLuaBFB : public CGenFunctionBlock<CBasicFB> {
     CIEC_ANY **mInternals; //!< A list of pointers to the internal variables.
     void *mInternalVarsData;
 };
-
-#endif /* SRC_CORE_LUABFB_H_ */

@@ -14,15 +14,15 @@
 #ifndef SRC_CORE_LUAADAPTERTYPEENTRY_H_
 #define SRC_CORE_LUAADAPTERTYPEENTRY_H_
 
-#include "forte/typelib.h"
-#include "forte/funcbloc.h"
 #include <string>
+#include "forte/interfacespec.h"
+#include "forte/typelib.h"
 
 class CResource;
 class CAdapter;
 class CLuaEngine;
 
-class CLuaAdapterTypeEntry : public CTypeLib::CAdapterTypeEntry {
+class CLuaAdapterTypeEntry : public forte::core::CAdapterTypeEntry {
   private:
     const std::string cmLuaScriptAsString;
     SFBInterfaceSpec mSocketInterfaceSpec;
@@ -32,7 +32,7 @@ class CLuaAdapterTypeEntry : public CTypeLib::CAdapterTypeEntry {
                          const std::string &paLuaScriptAsString,
                          SFBInterfaceSpec &interfaceSpec);
 
-    ~CLuaAdapterTypeEntry() override;
+    ~CLuaAdapterTypeEntry();
 
     static bool initInterfaceSpec(SFBInterfaceSpec &interfaceSpec, CLuaEngine *luaEngine, int index);
     bool initPlugInterfaceSpec(SFBInterfaceSpec &interfaceSpec);
@@ -42,9 +42,9 @@ class CLuaAdapterTypeEntry : public CTypeLib::CAdapterTypeEntry {
     static CLuaAdapterTypeEntry *createLuaAdapterTypeEntry(forte::core::StringId typeNameId,
                                                            const std::string &paLuaScriptAsString);
 
-    CAdapter *createAdapterInstance(forte::core::StringId paInstanceNameId,
-                                    forte::core::CFBContainer &paContainer,
-                                    bool paIsPlug) override;
+    virtual CAdapter *createAdapterInstance(forte::core::StringId paInstanceNameId,
+                                            forte::core::CFBContainer &paContainer,
+                                            bool paIsPlug);
 
     const SFBInterfaceSpec &getSocketInterfaceSpec() const {
       return mSocketInterfaceSpec;

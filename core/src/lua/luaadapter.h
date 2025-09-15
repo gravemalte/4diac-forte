@@ -15,9 +15,9 @@
 #define SRC_CORE_LUAADAPTER_H_
 
 #include "forte/adapter.h"
-#include "core/lua/luaadaptertypeentry.h"
+#include "luaadaptertypeentry.h"
 
-class CLuaAdapter : public CAdapter {
+class CLuaAdapter : public forte::CAdapter {
   public:
     CLuaAdapter(forte::core::StringId paInstanceNameId,
                 const CLuaAdapterTypeEntry *paTypeEntry,
@@ -30,8 +30,8 @@ class CLuaAdapter : public CAdapter {
     }
 
   private:
-    virtual void readInputData(TEventID paEIID);
-    virtual void writeOutputData(TEventID paEO);
+    void readInputData(TEventID paEIID) override;
+    void writeOutputData(TEventID paEO) override;
 
     const CLuaAdapterTypeEntry *mTypeEntry;
 };

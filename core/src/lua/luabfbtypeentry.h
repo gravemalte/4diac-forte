@@ -11,47 +11,40 @@
  *   Alois Zoitl  - upgraded to new FB memory layout
  *******************************************************************************/
 
-#ifndef SRC_CORE_LUAFBTYPEENTRY_H_
-#define SRC_CORE_LUAFBTYPEENTRY_H_
+#pragma once
 
+#include "forte/stringid.h"
+#include "forte/interfacespec.h"
 #include "forte/typelib.h"
-#include "forte/basicfb.h"
 
 class CLuaEngine;
 
-class CLuaBFBTypeEntry : public CTypeLib::CFBTypeEntry {
+class CLuaBFBTypeEntry : public forte::core::CFBTypeEntry {
   private:
     const std::string cmLuaScriptAsString;
     SFBInterfaceSpec m_interfaceSpec;
-    SInternalVarsInformation m_internalVarsInformation;
+    std::span<const forte::core::StringId> mVarInternalNames;
 
     CLuaBFBTypeEntry(forte::core::StringId typeNameId,
                      const std::string &paLuaScriptAsString,
                      SFBInterfaceSpec &interfaceSpec,
-                     SInternalVarsInformation &internalVarsInformation);
+                     std::span<const forte::core::StringId> varInternalNames);
 
-    ~CLuaBFBTypeEntry() override;
+    ~CLuaBFBTypeEntry();
 
     static bool initInterfaceSpec(SFBInterfaceSpec &interfaceSpec, CLuaEngine *luaEngine, int index);
     static void deleteInterfaceSpec(SFBInterfaceSpec &interfaceSpec);
-    static bool
-    initInternalVarsInformation(SInternalVarsInformation &internalVarsInformation, CLuaEngine *luaEngine, int index);
-    static void deleteInternalVarsInformation(SInternalVarsInformation &internalVarsInformation);
+    // static bool
+    // initInternalVarsInformation(SInternalVarsInformation &internalVarsInformation, CLuaEngine *luaEngine, int index);
+    // static void deleteInternalVarsInformation(SInternalVarsInformation &internalVarsInformation);
 
   public:
     static CLuaBFBTypeEntry *createLuaFBTypeEntry(forte::core::StringId typeNameId,
                                                   const std::string &paLuaScriptAsString);
 
-    CFunctionBlock *createFBInstance(forte::core::StringId paInstanceNameId,
-                                     forte::core::CFBContainer &paContainer) override;
+    CFunctionBlock *createFBInstance(forte::core::StringId paInstanceNameId, forte::core::CFBContainer &paContainer);
 
     const SFBInterfaceSpec &getInterfaceSpec() const {
       return m_interfaceSpec;
     }
-
-    const SInternalVarsInformation *getInternalVarsInformation() const {
-      return &m_internalVarsInformation;
-    }
 };
-
-#endif /* SRC_CORE_LUABFBTYPEENTRY_H_ */
