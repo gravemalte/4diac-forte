@@ -20,34 +20,28 @@ endif ()
 
 find_package(PkgConfig)
 
-if (FORTE_USE_LUATYPES STREQUAL "LuaJIT")
-    set(LUAJIT_LIBRARY
-        ""
-        CACHE FILEPATH "LuaJit Library"
-    )
-    set(LUAJIT_INCLUDE_DIR
-        ""
-        CACHE PATH "LuaJit Include Directory"
-    )
-    target_link_libraries(forte PUBLIC ${LUAJIT_LIBRARY})
-    if (UNIX AND NOT APPLE)
-        set(LUAJIT_MATH_LIBRARY
-            ""
-            CACHE FILEPATH "LuaJit Math Library"
-        )
-        target_link_libraries(forte PUBLIC ${LUAJIT_MATH_LIBRARY})
-    endif ()
-elseif (FORTE_USE_LUATYPES STREQUAL "Lua")
-
-    pkg_check_modules(LUA lua)
-
-    if (NOT LUA_FOUND)
-        find_package(Lua REQUIRED)
-    endif ()
-
+#if (FORTE_USE_LUATYPES STREQUAL "LuaJIT")
+#    set(LUAJIT_LIBRARY
+#        ""
+#        CACHE FILEPATH "LuaJit Library"
+#    )
+#    set(LUAJIT_INCLUDE_DIR
+#        ""
+#        CACHE PATH "LuaJit Include Directory"
+#    )
+#    target_link_libraries(forte PUBLIC ${LUAJIT_LIBRARY})
+#    if (UNIX AND NOT APPLE)
+#        set(LUAJIT_MATH_LIBRARY
+#            ""
+#            CACHE FILEPATH "LuaJit Math Library"
+#        )
+#        target_link_libraries(forte PUBLIC ${LUAJIT_MATH_LIBRARY})
+#    endif ()
+#elseif (FORTE_USE_LUATYPES STREQUAL "Lua51")
+    find_package(Lua51 "5.1" EXACT REQUIRED)
     target_link_libraries(forte PUBLIC ${LUA_LIBRARIES})
 
-endif ()
+#endif ()
 
 target_sources(forte-core PRIVATE
             luaengine.h
@@ -67,5 +61,5 @@ target_sources(forte-core PRIVATE
             luacfbtypeentry.h
             luacfbtypeentry.cpp
 )
-target_include_directories(forte-core PRIVATE ${LUAJIT_INCLUDE_DIR})
-target_include_directories(forte-core PRIVATE ${LUA_INCLUDE_DIRS})
+#target_include_directories(forte-core PRIVATE ${LUAJIT_INCLUDE_DIR})
+target_include_directories(forte-core PRIVATE ${LUA_INCLUDE_DIR})

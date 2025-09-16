@@ -14,9 +14,10 @@
  *   Martin Jobst - add dynamic internal variable setup from CBasicFB
  *******************************************************************************/
 
-#include "core/lua/luabfb.h"
-#include "core/lua/luaengine.h"
+#include "luabfb.h"
+#include "luaengine.h"
 #include "forte/adapter.h"
+#include "forte/fbcontainer.h"
 
 extern "C" {
 #include <lualib.h>
@@ -62,7 +63,7 @@ CLuaBFB::CLuaBFB(forte::core::StringId paInstanceNameId,
     CGenFunctionBlock<CBasicFB>(
         paContainer, paTypeEntry->getInterfaceSpec(), paInstanceNameId, paTypeEntry->getInternalVarsInformation()),
     mTypeEntry(paTypeEntry) {
-  CLuaEngine *luaEngine = getResource()->getLuaEngine();
+  auto luaEngine = getResource()->getInternal()->getLuaEngine();
   luaEngine->registerType<CLuaBFB>();
   luaEngine->pushObject<CLuaBFB>(this);
   luaEngine->store(this);

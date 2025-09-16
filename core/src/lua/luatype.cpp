@@ -10,21 +10,21 @@
  *   Martin Jobst, Monika Wenger
  *   - initial API and implementation and/or initial documentation
  *******************************************************************************/
-#include "core/lua/luatype.h"
-#include "forte/funcbloc.h"
-#include "core/lua/luaengine.h"
+#include "luatype.h"
+#include "luaengine.h"
+#include "forte/stringid.h"
 
 namespace luatype {
-  bool getAdapterInstanceDefinition(SAdapterInstanceDef &def, CLuaEngine *luaEngine, int index) {
-    def.mAdapterNameID = luaEngine->getField<forte::core::StringId, &CLuaEngine::getStringId>(index, "adapterNameID");
-    def.mAdapterTypeNameID =
-        luaEngine->getField<forte::core::StringId, &CLuaEngine::getStringId>(index, "adapterTypeNameID");
-    def.mIsPlug = luaEngine->getField<bool, &CLuaEngine::getBoolean>(index, "isPlug");
-    if (!def.mAdapterNameID || !def.mAdapterTypeNameID) {
-      return false;
-    }
-    return true;
-  }
+  // bool getAdapterInstanceDefinition(SAdapterInstanceDef &def, CLuaEngine *luaEngine, int index) {
+  //   def.mAdapterNameID = luaEngine->getField<forte::core::StringId, &CLuaEngine::getStringId>(index,
+  //   "adapterNameID"); def.mAdapterTypeNameID =
+  //       luaEngine->getField<forte::core::StringId, &CLuaEngine::getStringId>(index, "adapterTypeNameID");
+  //   def.mIsPlug = luaEngine->getField<bool, &CLuaEngine::getBoolean>(index, "isPlug");
+  //   if (!def.mAdapterNameID || !def.mAdapterTypeNameID) {
+  //     return false;
+  //   }
+  //   return true;
+  // }
 
   bool getTypeNameId(forte::core::StringId &id, CLuaEngine *luaEngine, int index) {
     switch (luaEngine->type(index)) {

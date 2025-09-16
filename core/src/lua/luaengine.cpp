@@ -12,7 +12,7 @@
  *   Alois Zoitl  - upgraded to new FB memory layout
  *******************************************************************************/
 
-#include "core/lua/luaengine.h"
+#include "luaengine.h"
 
 #include "forte/datatypes/forte_any.h"
 #include "forte/datatypes/forte_bool.h"
@@ -35,8 +35,10 @@
 #include "forte/datatypes/forte_date_and_time.h"
 #include "forte/datatypes/forte_time.h"
 #include "forte/datatypes/forte_array.h"
+#include "forte/datatypes/forte_string.h"
+#include "forte/datatypes/forte_wstring.h"
 #include "forte/util/devlog.h"
-#include "core/lua/luamodule.h"
+#include "luamodule.h"
 
 extern "C" {
 #include <lua.h>
@@ -237,7 +239,8 @@ bool CLuaEngine::luaGetAny(lua_State *paLuaState, CIEC_ANY &paValue, int paIndex
       static_cast<CIEC_LREAL &>(paValue) = CIEC_LREAL(static_cast<TForteDFloat>(lua_tonumber(paLuaState, paIndex)));
       break;
     case CIEC_ANY::e_STRING:
-      static_cast<CIEC_STRING &>(paValue) = CIEC_STRING(lua_tostring(paLuaState, paIndex));
+      static_cast<CIEC_STRING &>(paValue) =
+          CIEC_STRING(lua_tostring(paLuaState, paIndex), lua_strlen(paLuaState, paIndex));
       break;
     case CIEC_ANY::e_WSTRING:
       static_cast<CIEC_WSTRING &>(paValue) = CIEC_WSTRING(lua_tostring(paLuaState, paIndex));

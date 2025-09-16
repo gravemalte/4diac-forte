@@ -32,7 +32,6 @@ extern "C" {
 #endif
 
 #include "forte/datatypes/forte_any.h"
-
 #include "forte/datatypes/forte_array.h"
 
 // class CIEC_ARRAY;
