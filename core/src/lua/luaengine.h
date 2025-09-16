@@ -11,8 +11,7 @@
  *   Alois Zoitl  - upgraded to new FB memory layout
  *******************************************************************************/
 
-#ifndef SRC_CORE_LUAENGINE_H_
-#define SRC_CORE_LUAENGINE_H_
+#pragma once
 
 extern "C" {
 #include <lua.h>
@@ -21,7 +20,6 @@ extern "C" {
 }
 
 #include <string>
-#include <algorithm>
 
 #if !defined LUA_VERSION_NUM || LUA_VERSION_NUM == 501
 #define lua_rawgetp(L, i, p)                                                                                           \
@@ -33,8 +31,6 @@ extern "C" {
 
 #include "forte/datatypes/forte_any.h"
 #include "forte/datatypes/forte_array.h"
-
-// class CIEC_ARRAY;
 
 class CLuaEngine {
   private:
@@ -267,5 +263,3 @@ class CLuaEngine {
       return static_cast<CLuaType>(lua_type(luaState, index));
     }
 };
-
-#endif /* SRC_CORE_LUAENGINE_H_ */

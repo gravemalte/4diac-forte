@@ -11,8 +11,7 @@
  *   - initial API and implementation and/or initial documentation
  *******************************************************************************/
 
-#ifndef SRC_CORE_LUA_LUATYPE_H_
-#define SRC_CORE_LUA_LUATYPE_H_
+#pragma once
 
 #include "forte/stringid.h"
 
@@ -23,5 +22,3 @@ namespace luatype {
   bool getAdapterInstanceDefinition(SAdapterInstanceDef &def, CLuaEngine *luaEngine, int index);
   bool getTypeNameId(forte::core::StringId &id, CLuaEngine *luaEngine, int index);
 } // namespace luatype
-
-#endif /* SRC_CORE_LUA_LUATYPE_H_ */

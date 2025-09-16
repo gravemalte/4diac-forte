@@ -10,6 +10,7 @@
  *   Martin Jobst, Monika Wenger
  *                - initial API and implementation and/or initial documentation
  *   Alois Zoitl  - upgraded to new FB memory layout
+ *   Malte Grave -  modernized the Lua infrastructure
  *******************************************************************************/
 
 #include "luaengine.h"

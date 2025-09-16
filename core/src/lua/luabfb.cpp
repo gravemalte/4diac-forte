@@ -12,12 +12,15 @@
  *   Martin Jobst - initial API and implementation and/or initial documentation
  *   Alois Zoitl  - upgraded to new FB memory layout
  *   Martin Jobst - add dynamic internal variable setup from CBasicFB
+ *   Malte Grave -  modernized the Lua infrastructure
  *******************************************************************************/
 
 #include "luabfb.h"
 #include "luaengine.h"
 #include "forte/adapter.h"
 #include "forte/fbcontainer.h"
+#include "forte/resource.h"
+#include "../resource_internal.h"
 
 extern "C" {
 #include <lualib.h>
@@ -63,10 +66,11 @@ CLuaBFB::CLuaBFB(forte::core::StringId paInstanceNameId,
     CGenFunctionBlock<CBasicFB>(
         paContainer, paTypeEntry->getInterfaceSpec(), paInstanceNameId, paTypeEntry->getInternalVarsInformation()),
     mTypeEntry(paTypeEntry) {
-  auto luaEngine = getResource()->getInternal()->getLuaEngine();
-  luaEngine->registerType<CLuaBFB>();
-  luaEngine->pushObject<CLuaBFB>(this);
-  luaEngine->store(this);
+
+  auto luaEngine = getResource()->getInternal().getLuaEngine();
+  luaEngine.registerType<CLuaBFB>();
+  luaEngine.pushObject<CLuaBFB>(this);
+  luaEngine.store(this);
 }
 
 bool CLuaBFB::initialize() {
@@ -104,12 +108,12 @@ void CLuaBFB::createVarInternals() {
 
 void CLuaBFB::executeEvent(TEventID paEIID, CEventChainExecutionThread *paECET) {
   mInvokingExecEnv = paECET;
-  CLuaEngine *luaEngine = getResource()->getLuaEngine();
-  luaEngine->load(mTypeEntry);
-  luaEngine->load(this);
-  luaEngine->pushInteger(paEIID > 255 ? recalculateID(paEIID) : paEIID);
-  if (!luaEngine->call(2, 0)) {
-    DEVLOG_ERROR("Error calling function executeEvent for instance %s\n", getInstanceName());
+  auto luaEngine = getResource()->getInternal().getLuaEngine();
+  luaEngine.load(mTypeEntry);
+  luaEngine.load(this);
+  luaEngine.pushInteger(paEIID > 255 ? recalculateID(paEIID) : paEIID);
+  if (!luaEngine.call(2, 0)) {
+    DEVLOG_ERROR("[LUA] Error calling function executeEvent for instance %s\n", getInstanceName());
   }
 }
 

@@ -19,7 +19,7 @@
 
 #include "forte/genfb.h"
 #include "forte/cfb.h"
-#include "core/lua/luacfbtypeentry.h"
+#include "luacfbtypeentry.h"
 
 class CLuaCFB : public CGenFunctionBlock<CCompositeFB> {
   public:

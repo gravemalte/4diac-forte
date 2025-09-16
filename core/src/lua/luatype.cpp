@@ -28,7 +28,7 @@ namespace luatype {
 
   bool getTypeNameId(forte::core::StringId &id, CLuaEngine *luaEngine, int index) {
     switch (luaEngine->type(index)) {
-      case CLuaEngine::TNUMBER: id = luaEngine->getInteger<forte::core::StringId>(index); break;
+      case CLuaEngine::TNUMBER:
       case CLuaEngine::TSTRING: id = luaEngine->getStringId(index); break;
       default: return false;
     }
