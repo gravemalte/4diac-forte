@@ -21,7 +21,7 @@
 class CResource;
 class CLuaEngine;
 
-class CLuaCFBTypeEntry : public CTypeLib::CFBTypeEntry {
+class CLuaCFBTypeEntry : public forte::core::CFBTypeEntry {
   private:
     const std::string cmLuaScriptAsString;
     SFBInterfaceSpec m_interfaceSpec;
@@ -32,7 +32,7 @@ class CLuaCFBTypeEntry : public CTypeLib::CFBTypeEntry {
                      SFBInterfaceSpec &interfaceSpec,
                      SCFB_FBNData &fbnSpec);
 
-    ~CLuaCFBTypeEntry() override;
+    ~CLuaCFBTypeEntry();
 
     static bool initInterfaceSpec(SFBInterfaceSpec &interfaceSpec, CLuaEngine *luaEngine, int index);
     static void deleteInterfaceSpec(SFBInterfaceSpec &interfaceSpec);
@@ -43,8 +43,7 @@ class CLuaCFBTypeEntry : public CTypeLib::CFBTypeEntry {
     static CLuaCFBTypeEntry *createLuaFBTypeEntry(forte::core::StringId typeNameId,
                                                   const std::string &paLuaScriptAsString);
 
-    CFunctionBlock *createFBInstance(forte::core::StringId paInstanceNameId,
-                                     forte::core::CFBContainer &paContainer) override;
+    CFunctionBlock *createFBInstance(forte::core::StringId paInstanceNameId, forte::core::CFBContainer &paContainer);
 
     const SFBInterfaceSpec &getInterfaceSpec() const {
       return m_interfaceSpec;

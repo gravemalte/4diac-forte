@@ -35,10 +35,10 @@
 using namespace forte::core::literals;
 
 #ifdef FORTE_DYNAMIC_TYPE_LOAD
-#include "core/lua/luaadaptertypeentry.h"
-#include "core/lua/luabfbtypeentry.h"
-#include "core/lua/luacfbtypeentry.h"
-#include "core/lua/luaengine.h"
+#include "lua/luaadaptertypeentry.h"
+#include "lua/luabfbtypeentry.h"
+#include "lua/luacfbtypeentry.h"
+#include "lua/luaengine.h"
 #endif
 
 #include <string>

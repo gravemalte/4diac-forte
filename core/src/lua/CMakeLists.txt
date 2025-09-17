@@ -63,3 +63,4 @@ target_sources(forte-core PRIVATE
 )
 #target_include_directories(forte-core PRIVATE ${LUAJIT_INCLUDE_DIR})
 target_include_directories(forte-core PRIVATE ${LUA_INCLUDE_DIR})
+target_compile_definitions(forte-core PRIVATE FORTE_DYNAMIC_TYPE_LOAD)

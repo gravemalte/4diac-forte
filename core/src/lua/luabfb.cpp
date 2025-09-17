@@ -47,12 +47,8 @@ int CLuaFB_newindex(lua_State *paLuaState) {
 int CLuaFB_call(lua_State *paLuaState) {
   CLuaBFB *luaFB = CLuaEngine::luaGetObject<CLuaBFB>(paLuaState, 1);
   TForteUInt32 id = static_cast<TForteUInt32>(luaL_checkinteger(paLuaState, 2));
-  if ((id & CLuaBFB::scmLuaFBAdpFlag) != 0) {
-    luaFB->sendAdapterEvent((id >> 16) & CLuaBFB::scmLuaAdpVarMax, id & CLuaBFB::scmLuaFBVarMax,
-                            luaFB->mInvokingExecEnv);
-  } else {
-    luaFB->sendOutputEvent(id, luaFB->mInvokingExecEnv);
-  }
+  luaFB->sendOutputEvent(id, luaFB->mInvokingExecEnv);
+
   return 0;
 }
 
