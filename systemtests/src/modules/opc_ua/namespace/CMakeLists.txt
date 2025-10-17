@@ -9,9 +9,15 @@
 # *   Jose Cabral  - initial API and implementation and/or initial documentation
 # *******************************************************************************/
 
-forte_opcua_add_nodeset(fordiacNamespace ${CMAKE_CURRENT_SOURCE_DIR}/generated)
-
-forte_opcua_add_type(forte_datatypetest DataTypeTest "fordiacNamespace") # file name; StructureName; Namespace
-
-forte_add_include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
+# FIXME do not add test sources to non-test target
+target_sources(forte-com-opc_ua PRIVATE
+        fordiacNamespace.cpp
+        forte_datatypetest.cpp
+        forte_datatypetest.h
+        generated/ua_namespace_fordiacNamespace.c
+        generated/ua_namespace_fordiacNamespace.h
+        generated/ua_types_fordiacNamespace_generated.c
+        generated/ua_types_fordiacNamespace_generated.h
+        generated/ua_types_fordiacNamespace_generated_encoding_binary.h
+        generated/ua_types_fordiacNamespace_generated_handling.h
+)

@@ -12,36 +12,32 @@
  *******************************************************************************/
 #pragma once
 
-#include "fbcontainer.h"
+#include "forte/fbcontainer.h"
 #include <functional>
 
-class CFBContainerMock : public forte::core::CFBContainer{
+namespace forte::test {
+  class CFBContainerMock : public CFBContainer {
 
-  public:
+    public:
+      static CFBContainerMock smDefaultFBContMock;
 
-    static CFBContainerMock smDefaultFBContMock;
+      CResource *getResource() override {
+        throw new std::bad_function_call();
+      }
 
-    CResource* getResource() override {
-      throw new std::bad_function_call();
-    }
+      CResource *getResource() const override {
+        throw new std::bad_function_call();
+      }
 
-    CResource* getResource() const override {
-      throw new std::bad_function_call();
-    }
+      CDevice *getDevice() override {
+        throw new std::bad_function_call();
+      }
 
-    CDevice* getDevice() override {
-      throw new std::bad_function_call();
-    }
+      CDevice *getDevice() const override {
+        throw new std::bad_function_call();
+      }
 
-    CDevice* getDevice() const override {
-      throw new std::bad_function_call();
-    }
-
-  private:
-    CFBContainerMock() : forte::core::CFBContainer(CStringDictionary::scmInvalidStringId, *this){
-    };
-
-};
-
-
-
+    private:
+      CFBContainerMock() : CFBContainer({}, *this) {};
+  };
+} // namespace forte::test

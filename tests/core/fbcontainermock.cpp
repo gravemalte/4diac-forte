@@ -13,5 +13,6 @@
 
 #include "fbcontainermock.h"
 
-CFBContainerMock CFBContainerMock::smDefaultFBContMock;
-
+namespace forte::test {
+  CFBContainerMock CFBContainerMock::smDefaultFBContMock;
+}

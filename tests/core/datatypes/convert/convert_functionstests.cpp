@@ -14,46 +14,47 @@
 #include <boost/test/unit_test.hpp>
 #include "forte_boost_output_support.h"
 
-#include "convert_functions.h"
+#include "forte/datatypes/convert/convert_functions.h"
 
-#include "forte_sint.h"
-#include "forte_lint.h"
-#include "forte_real.h"
-#include "forte_date_and_time.h"
-#include "forte_time_of_day.h"
+#include "forte/datatypes/forte_sint.h"
+#include "forte/datatypes/forte_lint.h"
+#include "forte/datatypes/forte_real.h"
+#include "forte/datatypes/forte_date_and_time.h"
+#include "forte/datatypes/forte_time_of_day.h"
 
-BOOST_AUTO_TEST_SUITE(convert_functions)
+namespace forte::test {
+  BOOST_AUTO_TEST_SUITE(convert_functions)
 
   BOOST_AUTO_TEST_CASE(cast_lword_to_bool) {
     CIEC_LWORD trueResult(0xFF);
     CIEC_LWORD falseResult(0xFE);
 
-    BOOST_TEST(func_LWORD_TO_BOOL(trueResult) == CIEC_BOOL(true));
-    BOOST_TEST(func_LWORD_TO_BOOL(falseResult) == CIEC_BOOL(false));
+    BOOST_TEST(func_LWORD_TO_BOOL(trueResult) == true_BOOL);
+    BOOST_TEST(func_LWORD_TO_BOOL(falseResult) == false_BOOL);
   }
 
   BOOST_AUTO_TEST_CASE(cast_dword_to_bool) {
     CIEC_DWORD trueResult(0xFF);
     CIEC_DWORD falseResult(0xFE);
 
-    BOOST_TEST(func_DWORD_TO_BOOL(trueResult) == CIEC_BOOL(true));
-    BOOST_TEST(func_DWORD_TO_BOOL(falseResult) == CIEC_BOOL(false));
+    BOOST_TEST(func_DWORD_TO_BOOL(trueResult) == true_BOOL);
+    BOOST_TEST(func_DWORD_TO_BOOL(falseResult) == false_BOOL);
   }
 
   BOOST_AUTO_TEST_CASE(cast_word_to_bool) {
     CIEC_WORD trueResult(0xFF);
     CIEC_WORD falseResult(0xFE);
 
-    BOOST_TEST(func_WORD_TO_BOOL(trueResult) == CIEC_BOOL(true));
-    BOOST_TEST(func_WORD_TO_BOOL(falseResult) == CIEC_BOOL(false));
+    BOOST_TEST(func_WORD_TO_BOOL(trueResult) == true_BOOL);
+    BOOST_TEST(func_WORD_TO_BOOL(falseResult) == false_BOOL);
   }
 
   BOOST_AUTO_TEST_CASE(cast_byte_to_bool) {
     CIEC_BYTE trueResult(0xFF);
     CIEC_BYTE falseResult(0xFE);
 
-    BOOST_TEST(func_BYTE_TO_BOOL(trueResult) == CIEC_BOOL(true));
-    BOOST_TEST(func_BYTE_TO_BOOL(falseResult) == CIEC_BOOL(false));
+    BOOST_TEST(func_BYTE_TO_BOOL(trueResult) == true_BOOL);
+    BOOST_TEST(func_BYTE_TO_BOOL(falseResult) == false_BOOL);
   }
 
   BOOST_AUTO_TEST_CASE(cast_word_to_int_then_int_to_dint_sign_extension_test) {
@@ -436,7 +437,8 @@ BOOST_AUTO_TEST_SUITE(convert_functions)
     time.fromString("T#2d5h43m12s");
     CIEC_LINT timeInS;
     timeInS = func_TIME_IN_S_TO_LINT(time);
-    BOOST_TEST(static_cast<CIEC_LINT::TValueType>(timeInS) == (INT64_C(172800) + INT64_C(18000) + INT64_C(2580) + INT64_C(12)));
+    BOOST_TEST(static_cast<CIEC_LINT::TValueType>(timeInS) ==
+               (INT64_C(172800) + INT64_C(18000) + INT64_C(2580) + INT64_C(12)));
   }
 
   BOOST_AUTO_TEST_CASE(CONVERT_TIME_TO_MS_LINT) {
@@ -444,7 +446,8 @@ BOOST_AUTO_TEST_SUITE(convert_functions)
     time.fromString("T#2d5h43m12s44ms");
     CIEC_LINT timeInMs;
     timeInMs = func_TIME_IN_MS_TO_LINT(time);
-    BOOST_TEST(static_cast<CIEC_LINT::TValueType>(timeInMs) == (INT64_C(172800000) + INT64_C(18000000) + INT64_C(2580000) + INT64_C(12000) + INT64_C(44)));
+    BOOST_TEST(static_cast<CIEC_LINT::TValueType>(timeInMs) ==
+               (INT64_C(172800000) + INT64_C(18000000) + INT64_C(2580000) + INT64_C(12000) + INT64_C(44)));
   }
 
   BOOST_AUTO_TEST_CASE(CONVERT_TIME_TO_US_LINT) {
@@ -452,7 +455,9 @@ BOOST_AUTO_TEST_SUITE(convert_functions)
     time.fromString("T#2d5h43m12s44ms27us");
     CIEC_LINT timeInUs;
     timeInUs = func_TIME_IN_US_TO_LINT(time);
-    BOOST_TEST(static_cast<CIEC_LINT::TValueType>(timeInUs) == (INT64_C(172800000000) + INT64_C(18000000000) + INT64_C(2580000000) + INT64_C(12000000) + INT64_C(44000) + INT64_C(27)));
+    BOOST_TEST(static_cast<CIEC_LINT::TValueType>(timeInUs) ==
+               (INT64_C(172800000000) + INT64_C(18000000000) + INT64_C(2580000000) + INT64_C(12000000) +
+                INT64_C(44000) + INT64_C(27)));
   }
 
   BOOST_AUTO_TEST_CASE(CONVERT_TIME_TO_NS_LINT) {
@@ -460,7 +465,9 @@ BOOST_AUTO_TEST_SUITE(convert_functions)
     time.fromString("T#2d5h43m12s44ms27us31ns");
     CIEC_LINT timeInNs;
     timeInNs = func_TIME_IN_NS_TO_LINT(time);
-    BOOST_TEST(static_cast<CIEC_LINT::TValueType>(timeInNs) == (INT64_C(172800000000000) + INT64_C(18000000000000) + INT64_C(2580000000000) + INT64_C(12000000000) + INT64_C(44000000) + INT64_C(27000) + INT64_C(31)));
+    BOOST_TEST(static_cast<CIEC_LINT::TValueType>(timeInNs) ==
+               (INT64_C(172800000000000) + INT64_C(18000000000000) + INT64_C(2580000000000) + INT64_C(12000000000) +
+                INT64_C(44000000) + INT64_C(27000) + INT64_C(31)));
   }
 
   BOOST_AUTO_TEST_CASE(CONVERT_TIME_TO_S_ULINT) {
@@ -468,7 +475,8 @@ BOOST_AUTO_TEST_SUITE(convert_functions)
     time.fromString("T#2d5h43m12s");
     CIEC_ULINT timeInS;
     timeInS = func_TIME_IN_S_TO_ULINT(time);
-    BOOST_TEST(static_cast<CIEC_ULINT::TValueType>(timeInS) == (UINT64_C(172800) + UINT64_C(18000) + UINT64_C(2580) + UINT64_C(12)));
+    BOOST_TEST(static_cast<CIEC_ULINT::TValueType>(timeInS) ==
+               (UINT64_C(172800) + UINT64_C(18000) + UINT64_C(2580) + UINT64_C(12)));
   }
 
   BOOST_AUTO_TEST_CASE(CONVERT_TIME_TO_MS_ULINT) {
@@ -476,7 +484,8 @@ BOOST_AUTO_TEST_SUITE(convert_functions)
     time.fromString("T#2d5h43m12s44ms");
     CIEC_ULINT timeInMs;
     timeInMs = func_TIME_IN_MS_TO_ULINT(time);
-    BOOST_TEST(static_cast<CIEC_ULINT::TValueType>(timeInMs) == (UINT64_C(172800000) + UINT64_C(18000000) + UINT64_C(2580000) + UINT64_C(12000) + UINT64_C(44)));
+    BOOST_TEST(static_cast<CIEC_ULINT::TValueType>(timeInMs) ==
+               (UINT64_C(172800000) + UINT64_C(18000000) + UINT64_C(2580000) + UINT64_C(12000) + UINT64_C(44)));
   }
 
   BOOST_AUTO_TEST_CASE(CONVERT_TIME_TO_US_ULINT) {
@@ -484,7 +493,9 @@ BOOST_AUTO_TEST_SUITE(convert_functions)
     time.fromString("T#2d5h43m12s44ms27us");
     CIEC_ULINT timeInUs;
     timeInUs = func_TIME_IN_US_TO_ULINT(time);
-    BOOST_TEST(static_cast<CIEC_ULINT::TValueType>(timeInUs) == (UINT64_C(172800000000) + UINT64_C(18000000000) + UINT64_C(2580000000) + UINT64_C(12000000) + UINT64_C(44000) + UINT64_C(27)));
+    BOOST_TEST(static_cast<CIEC_ULINT::TValueType>(timeInUs) ==
+               (UINT64_C(172800000000) + UINT64_C(18000000000) + UINT64_C(2580000000) + UINT64_C(12000000) +
+                UINT64_C(44000) + UINT64_C(27)));
   }
 
   BOOST_AUTO_TEST_CASE(CONVERT_TIME_TO_NS_ULINT) {
@@ -492,7 +503,9 @@ BOOST_AUTO_TEST_SUITE(convert_functions)
     time.fromString("T#2d5h43m12s44ms27us31ns");
     CIEC_ULINT timeInNs;
     timeInNs = func_TIME_IN_NS_TO_ULINT(time);
-    BOOST_TEST(static_cast<CIEC_ULINT::TValueType>(timeInNs) == (UINT64_C(172800000000000) + UINT64_C(18000000000000) + UINT64_C(2580000000000) + UINT64_C(12000000000) + UINT64_C(44000000) + UINT64_C(27000) + UINT64_C(31)));
+    BOOST_TEST(static_cast<CIEC_ULINT::TValueType>(timeInNs) ==
+               (UINT64_C(172800000000000) + UINT64_C(18000000000000) + UINT64_C(2580000000000) + UINT64_C(12000000000) +
+                UINT64_C(44000000) + UINT64_C(27000) + UINT64_C(31)));
   }
 
   BOOST_AUTO_TEST_CASE(CONVERT_TIME_TO_S_LREAL) {
@@ -500,7 +513,11 @@ BOOST_AUTO_TEST_SUITE(convert_functions)
     time.fromString("T#2d5h43m12s44ms27us31ns");
     CIEC_LREAL timeInS;
     timeInS = func_TIME_IN_S_TO_LREAL(time);
-    BOOST_TEST(static_cast<CIEC_LREAL::TValueType>(timeInS) == static_cast<CIEC_LREAL::TValueType>(INT64_C(172800000000000) + INT64_C(18000000000000) + INT64_C(2580000000000) + INT64_C(12000000000) + INT64_C(44000000) + INT64_C(27000) + INT64_C(31)) / static_cast<CIEC_LREAL::TValueType>(1E9));
+    BOOST_TEST(static_cast<CIEC_LREAL::TValueType>(timeInS) ==
+               static_cast<CIEC_LREAL::TValueType>(INT64_C(172800000000000) + INT64_C(18000000000000) +
+                                                   INT64_C(2580000000000) + INT64_C(12000000000) + INT64_C(44000000) +
+                                                   INT64_C(27000) + INT64_C(31)) /
+                   static_cast<CIEC_LREAL::TValueType>(1E9));
   }
 
   BOOST_AUTO_TEST_CASE(CONVERT_TIME_TO_MS_LREAL) {
@@ -508,8 +525,11 @@ BOOST_AUTO_TEST_SUITE(convert_functions)
     time.fromString("T#2d5h43m12s44ms27us31ns");
     CIEC_LREAL timeInMs;
     timeInMs = func_TIME_IN_MS_TO_LREAL(time);
-    BOOST_TEST(
-      static_cast<CIEC_LREAL::TValueType>(timeInMs) == static_cast<CIEC_LREAL::TValueType>(INT64_C(172800000000000) + INT64_C(18000000000000) + INT64_C(2580000000000) + INT64_C(12000000000) + INT64_C(44000000) + INT64_C(27000) + INT64_C(31)) / static_cast<CIEC_LREAL::TValueType>(1E6));
+    BOOST_TEST(static_cast<CIEC_LREAL::TValueType>(timeInMs) ==
+               static_cast<CIEC_LREAL::TValueType>(INT64_C(172800000000000) + INT64_C(18000000000000) +
+                                                   INT64_C(2580000000000) + INT64_C(12000000000) + INT64_C(44000000) +
+                                                   INT64_C(27000) + INT64_C(31)) /
+                   static_cast<CIEC_LREAL::TValueType>(1E6));
   }
 
   BOOST_AUTO_TEST_CASE(CONVERT_TIME_TO_US_LREAL) {
@@ -517,8 +537,11 @@ BOOST_AUTO_TEST_SUITE(convert_functions)
     time.fromString("T#2d5h43m12s44ms27us31ns");
     CIEC_LREAL timeInUs;
     timeInUs = func_TIME_IN_US_TO_LREAL(time);
-    BOOST_TEST(
-      static_cast<CIEC_LREAL::TValueType>(timeInUs) == static_cast<CIEC_LREAL::TValueType>(INT64_C(172800000000000) + INT64_C(18000000000000) + INT64_C(2580000000000) + INT64_C(12000000000) + INT64_C(44000000) + INT64_C(27000) + INT64_C(31)) / static_cast<CIEC_LREAL::TValueType>(1E3));
+    BOOST_TEST(static_cast<CIEC_LREAL::TValueType>(timeInUs) ==
+               static_cast<CIEC_LREAL::TValueType>(INT64_C(172800000000000) + INT64_C(18000000000000) +
+                                                   INT64_C(2580000000000) + INT64_C(12000000000) + INT64_C(44000000) +
+                                                   INT64_C(27000) + INT64_C(31)) /
+                   static_cast<CIEC_LREAL::TValueType>(1E3));
   }
 
   BOOST_AUTO_TEST_CASE(CONVERT_TIME_TO_NS_LREAL) {
@@ -526,8 +549,10 @@ BOOST_AUTO_TEST_SUITE(convert_functions)
     time.fromString("T#2d5h43m12s44ms27us31ns");
     CIEC_LREAL timeInNs;
     timeInNs = func_TIME_IN_NS_TO_LREAL(time);
-    BOOST_TEST(
-      static_cast<CIEC_LREAL::TValueType>(timeInNs) == static_cast<CIEC_LREAL::TValueType>(INT64_C(172800000000000) + INT64_C(18000000000000) + INT64_C(2580000000000) + INT64_C(12000000000) + INT64_C(44000000) + INT64_C(27000) + INT64_C(31)));
+    BOOST_TEST(static_cast<CIEC_LREAL::TValueType>(timeInNs) ==
+               static_cast<CIEC_LREAL::TValueType>(INT64_C(172800000000000) + INT64_C(18000000000000) +
+                                                   INT64_C(2580000000000) + INT64_C(12000000000) + INT64_C(44000000) +
+                                                   INT64_C(27000) + INT64_C(31)));
   }
 
   BOOST_AUTO_TEST_CASE(CONVERT_STRING_TO_CHAR) {
@@ -852,7 +877,7 @@ BOOST_AUTO_TEST_SUITE(convert_functions)
     BOOST_TEST(static_cast<ResultType::TValueType>(result) == 257);
   }
 
-    /**** *_BCD_TO_** ****/
+  /**** *_BCD_TO_** ****/
   BOOST_AUTO_TEST_CASE(BCD_TO_USINT) {
     using SourceType = CIEC_LWORD;
     using ResultType = CIEC_USINT;
@@ -1013,7 +1038,7 @@ BOOST_AUTO_TEST_SUITE(convert_functions)
     result = func_UINT_TO_BCD_BYTE(number3);
     BOOST_TEST(static_cast<ResultType::TValueType>(result) == 0x01);
   }
-  
+
   BOOST_AUTO_TEST_CASE(UINT_TO_BCD_WORD) {
     using SourceType = CIEC_UINT;
     using ResultType = CIEC_WORD;
@@ -1074,7 +1099,7 @@ BOOST_AUTO_TEST_SUITE(convert_functions)
     result = func_UDINT_TO_BCD_BYTE(number3);
     BOOST_TEST(static_cast<ResultType::TValueType>(result) == 0x01);
   }
-  
+
   BOOST_AUTO_TEST_CASE(UDINT_TO_BCD_WORD) {
     using SourceType = CIEC_UDINT;
     using ResultType = CIEC_WORD;
@@ -1120,7 +1145,7 @@ BOOST_AUTO_TEST_SUITE(convert_functions)
     BOOST_TEST(static_cast<ResultType::TValueType>(result) == 0x101);
   }
 
-    /**** ULINT_TO_BCD_* ****/
+  /**** ULINT_TO_BCD_* ****/
   BOOST_AUTO_TEST_CASE(ULINT_TO_BCD_BYTE) {
     using SourceType = CIEC_ULINT;
     using ResultType = CIEC_BYTE;
@@ -1135,7 +1160,7 @@ BOOST_AUTO_TEST_SUITE(convert_functions)
     result = func_ULINT_TO_BCD_BYTE(number3);
     BOOST_TEST(static_cast<ResultType::TValueType>(result) == 0x01);
   }
-  
+
   BOOST_AUTO_TEST_CASE(ULINT_TO_BCD_WORD) {
     using SourceType = CIEC_ULINT;
     using ResultType = CIEC_WORD;
@@ -1196,7 +1221,7 @@ BOOST_AUTO_TEST_SUITE(convert_functions)
     result = func_TO_BCD_BYTE(number3);
     BOOST_TEST(static_cast<ResultType::TValueType>(result) == 0x01);
   }
-  
+
   BOOST_AUTO_TEST_CASE(TO_BCD_WORD) {
     using SourceType = CIEC_ULINT;
     using ResultType = CIEC_WORD;
@@ -1243,3 +1268,4 @@ BOOST_AUTO_TEST_SUITE(convert_functions)
   }
 
   BOOST_AUTO_TEST_SUITE_END()
+} // namespace forte::test

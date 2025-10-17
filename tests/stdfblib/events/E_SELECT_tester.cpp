@@ -12,80 +12,81 @@
  *   Alois Zoitl - migrated fb tests to boost test infrastructure
  *******************************************************************************/
 #include "../../core/fbtests/fbtestfixture.h"
-#include <forte_bool.h>
+#include "forte/iec61131_functions.h"
+#include "forte/datatypes/forte_bool.h"
 
-#ifdef FORTE_ENABLE_GENERATED_SOURCE_CPP
-#include "E_SELECT_tester_gen.cpp"
-#endif
+using namespace forte::literals;
 
-struct E_SELECT_TestFixture : public CFBTestFixtureBase {
+namespace forte::iec61499::events::test {
+  struct E_SELECT_TestFixture : public forte::test::CFBTestFixtureBase {
 
-    E_SELECT_TestFixture() :
-        CFBTestFixtureBase(g_nStringIdE_SELECT) {
-      setInputData({&mInG});
-      CFBTestFixtureBase::setup();
+      E_SELECT_TestFixture() : CFBTestFixtureBase("iec61499::events::E_SELECT"_STRID) {
+        setInputData({&mInG});
+        setup();
+      }
+
+      CIEC_BOOL mInG; // DATA INPUT
+  };
+
+  BOOST_FIXTURE_TEST_SUITE(SelectTests, E_SELECT_TestFixture)
+
+  BOOST_AUTO_TEST_CASE(SelectEI0) {
+    mInG = false_BOOL;
+    triggerEvent(0);
+    BOOST_CHECK(checkForSingleOutputEventOccurence(0));
+    triggerEvent(1);
+    BOOST_CHECK(eventChainEmpty());
+  }
+
+  BOOST_AUTO_TEST_CASE(SelectEI1) {
+    mInG = true_BOOL;
+    triggerEvent(1);
+    BOOST_CHECK(checkForSingleOutputEventOccurence(0));
+    triggerEvent(0);
+    BOOST_CHECK(eventChainEmpty());
+  }
+
+  BOOST_AUTO_TEST_CASE(MultipleSelectEI0) {
+    mInG = false_BOOL;
+    for (unsigned int i = 0; i < 1000; i++) {
+      triggerEvent(0);
+      BOOST_CHECK(checkForSingleOutputEventOccurence(0));
     }
-
-    CIEC_BOOL mInG; //DATA INPUT
-};
-
-BOOST_FIXTURE_TEST_SUITE( SelectTests, E_SELECT_TestFixture)
-
-BOOST_AUTO_TEST_CASE(SelectEI0) {
-  mInG = CIEC_BOOL(false);
-  triggerEvent(0);
-  BOOST_CHECK(checkForSingleOutputEventOccurence(0));
-  triggerEvent(1);
-  BOOST_CHECK(eventChainEmpty());
-}
-
-BOOST_AUTO_TEST_CASE(SelectEI1) {
-  mInG = CIEC_BOOL(true);
-  triggerEvent(1);
-  BOOST_CHECK(checkForSingleOutputEventOccurence(0));
-  triggerEvent(0);
-  BOOST_CHECK (eventChainEmpty());}
-
-BOOST_AUTO_TEST_CASE(MultipleSelectEI0) {
-  mInG = CIEC_BOOL(false);
-  for(unsigned int i = 0; i < 1000; i++) {
-    triggerEvent(0);
-    BOOST_CHECK(checkForSingleOutputEventOccurence(0));
+    for (unsigned int i = 0; i < 1000; i++) {
+      triggerEvent(0);
+      BOOST_CHECK(checkForSingleOutputEventOccurence(0));
+      triggerEvent(1);
+      BOOST_CHECK(eventChainEmpty());
+    }
   }
-  for(unsigned int i = 0; i < 1000; i++) {
-    triggerEvent(0);
-    BOOST_CHECK(checkForSingleOutputEventOccurence(0));
-    triggerEvent(1);
-    BOOST_CHECK(eventChainEmpty());
-  }
-}
 
-BOOST_AUTO_TEST_CASE(MultipleSelectEI1) {
-  mInG = CIEC_BOOL(true);
-  for(unsigned int i = 0; i < 1000; i++) {
-    triggerEvent(1);
-    BOOST_CHECK(checkForSingleOutputEventOccurence(0));
+  BOOST_AUTO_TEST_CASE(MultipleSelectEI1) {
+    mInG = true_BOOL;
+    for (unsigned int i = 0; i < 1000; i++) {
+      triggerEvent(1);
+      BOOST_CHECK(checkForSingleOutputEventOccurence(0));
+    }
+    for (unsigned int i = 0; i < 1000; i++) {
+      triggerEvent(1);
+      BOOST_CHECK(checkForSingleOutputEventOccurence(0));
+      triggerEvent(0);
+      BOOST_CHECK(eventChainEmpty());
+    }
   }
-  for(unsigned int i = 0; i < 1000; i++) {
-    triggerEvent(1);
-    BOOST_CHECK(checkForSingleOutputEventOccurence(0));
-    triggerEvent(0);
-    BOOST_CHECK(eventChainEmpty());
-  }
-}
 
-BOOST_AUTO_TEST_CASE(Alternate) {
-  for(unsigned int i = 0; i < 1000; ++i) {
-    mInG = func_NOT(mInG);
-    triggerEvent((mInG) ? 1 : 0);
-    BOOST_CHECK(checkForSingleOutputEventOccurence(0));
+  BOOST_AUTO_TEST_CASE(Alternate) {
+    for (unsigned int i = 0; i < 1000; ++i) {
+      mInG = func_NOT(mInG);
+      triggerEvent((mInG) ? 1 : 0);
+      BOOST_CHECK(checkForSingleOutputEventOccurence(0));
+    }
+    for (unsigned int i = 0; i < 1000; i++) {
+      triggerEvent((mInG) ? 1 : 0);
+      BOOST_CHECK(checkForSingleOutputEventOccurence(0));
+      triggerEvent((mInG) ? 0 : 1);
+      BOOST_CHECK(eventChainEmpty());
+    }
   }
-  for(unsigned int i = 0; i < 1000; i++) {
-    triggerEvent((mInG) ? 1 : 0);
-    BOOST_CHECK(checkForSingleOutputEventOccurence(0));
-    triggerEvent((mInG) ? 0 : 1);
-    BOOST_CHECK(eventChainEmpty());
-  }
-}
 
-BOOST_AUTO_TEST_SUITE_END()
+  BOOST_AUTO_TEST_SUITE_END()
+} // namespace forte::iec61499::events::test

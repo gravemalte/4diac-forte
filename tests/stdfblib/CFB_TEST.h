@@ -12,100 +12,53 @@
 
 #pragma once
 
-#include "cfb.h"
-#include "typelib.h"
-#include "forte_bool.h"
-#include "E_PERMIT_fbt.h"
-#include "E_SR_fbt.h"
-#include "E_SWITCH_fbt.h"
-#include "GEN_E_DEMUX_fbt.h"
-#include "GEN_E_MUX_fbt.h"
+#include "forte/cfb.h"
+#include "forte/typelib.h"
+#include "forte/datatypes/forte_bool.h"
+#include "forte/iec61499/events/E_PERMIT_fbt.h"
+#include "forte/iec61499/events/E_SR_fbt.h"
+#include "forte/iec61499/events/E_SWITCH_fbt.h"
+#include "forte/iec61499/events/GEN_E_DEMUX_fbt.h"
+#include "forte/iec61499/events/GEN_E_MUX_fbt.h"
 
+namespace forte::test {
+  class FORTE_CFB_TEST final : public CCompositeFB {
+      DECLARE_FIRMWARE_FB(FORTE_CFB_TEST)
 
-class FORTE_CFB_TEST final : public CCompositeFB {
-  DECLARE_FIRMWARE_FB(FORTE_CFB_TEST)
+    private:
+      static const TEventID scmEventSETID = 0;
+      static const TEventID scmEventRESETID = 1;
+      static const TEventID scmEventCNFID = 0;
+      static const TEventID scmEventCHANGEDID = 1;
 
-  private:
-    static const CStringDictionary::TStringId scmDataInputNames[];
-    static const CStringDictionary::TStringId scmDataInputTypeIds[];
-    static const CStringDictionary::TStringId scmDataOutputNames[];
-    static const CStringDictionary::TStringId scmDataOutputTypeIds[];
-    static const TEventID scmEventSETID = 0;
-    static const TEventID scmEventRESETID = 1;
-    static const TDataIOID scmEIWith[];
-    static const TForteInt16 scmEIWithIndexes[];
-    static const CStringDictionary::TStringId scmEventInputNames[];
-    static const CStringDictionary::TStringId scmEventInputTypeIds[];
-    static const TEventID scmEventCNFID = 0;
-    static const TEventID scmEventCHANGEDID = 1;
-    static const TDataIOID scmEOWith[];
-    static const TForteInt16 scmEOWithIndexes[];
-    static const CStringDictionary::TStringId scmEventOutputNames[];
-    static const CStringDictionary::TStringId scmEventOutputTypeIds[];
+      CInternalFB<iec61499::events::FORTE_E_PERMIT> fb_PERMIT_OP;
+      CInternalFB<iec61499::events::FORTE_E_SR> fb_E_SR;
+      CInternalFB<iec61499::events::FORTE_E_SWITCH> fb_SET_CHANGED;
+      CInternalFB<iec61499::events::GEN_E_DEMUX> fb_E_DEMUX_2;
+      CInternalFB<iec61499::events::GEN_E_MUX> fb_E_MUX_2;
+      CInternalFB<iec61499::events::FORTE_E_SWITCH> fb_RESET_CHANGED;
 
-    static const SFBInterfaceSpec scmFBInterfaceSpec;
+      void readInputData(TEventID paEIID) override;
+      void writeOutputData(TEventID paEIID) override;
+      void setInitialValues() override;
+      CDataConnection *getIf2InConUnchecked(TPortId paDIID) override;
 
+    public:
+      FORTE_CFB_TEST(StringId paInstanceNameId, CFBContainer &paContainer);
 
-    static const SCFB_FBInstanceData scmInternalFBs[];
+      CEventConnection conn_CNF;
+      CEventConnection conn_CHANGED;
 
-    static const SCFB_FBConnectionData scmEventConnections[];
+      CDataConnection *conn_QI;
 
-    static const SCFB_FBFannedOutConnectionData scmFannedOutEventConnections[];
+      COutDataConnection<CIEC_BOOL> conn_QO;
 
-    static const SCFB_FBConnectionData scmDataConnections[];
+      COutDataConnection<CIEC_BOOL> conn_if2in_QI;
 
-    static const SCFB_FBFannedOutConnectionData scmFannedOutDataConnections[];
-    static const SCFB_FBNData scmFBNData;
-
-    forte::core::CInternalFB<FORTE_E_PERMIT> fb_PERMIT_OP;
-    forte::core::CInternalFB<FORTE_E_SR> fb_E_SR;
-    forte::core::CInternalFB<FORTE_E_SWITCH> fb_SET_CHANGED;
-    forte::core::CInternalFB<GEN_E_DEMUX> fb_E_DEMUX_2;
-    forte::core::CInternalFB<GEN_E_MUX> fb_E_MUX_2;
-    forte::core::CInternalFB<FORTE_E_SWITCH> fb_RESET_CHANGED;
-
-    void readInputData(TEventID paEIID) override;
-    void writeOutputData(TEventID paEIID) override;
-    void readInternal2InterfaceOutputData(TEventID paEOID) override;
-    void setInitialValues() override;
-
-  public:
-    FORTE_CFB_TEST(CStringDictionary::TStringId paInstanceNameId, forte::core::CFBContainer &paContainer);
-
-    CIEC_BOOL var_QI;
-
-    CIEC_BOOL var_QO;
-
-    CIEC_BOOL var_conn_QO;
-
-    CEventConnection conn_CNF;
-    CEventConnection conn_CHANGED;
-
-    CDataConnection *conn_QI;
-
-    CDataConnection conn_QO;
-
-    CIEC_ANY *getDI(size_t) override;
-    CIEC_ANY *getDO(size_t) override;
-    CEventConnection *getEOConUnchecked(TPortId) override;
-    CDataConnection **getDIConUnchecked(TPortId) override;
-    CDataConnection *getDOConUnchecked(TPortId) override;
-
-    void evt_SET(const CIEC_BOOL &paQI, CIEC_BOOL &paQO) {
-      var_QI = paQI;
-      executeEvent(scmEventSETID, nullptr);
-      paQO = var_QO;
-    }
-
-    void evt_RESET(const CIEC_BOOL &paQI, CIEC_BOOL &paQO) {
-      var_QI = paQI;
-      executeEvent(scmEventRESETID, nullptr);
-      paQO = var_QO;
-    }
-
-    void operator()(const CIEC_BOOL &paQI, CIEC_BOOL &paQO) {
-      evt_SET(paQI, paQO);
-    }
-};
-
-
+      CIEC_ANY *getDI(size_t) override;
+      CIEC_ANY *getDO(size_t) override;
+      CEventConnection *getEOConUnchecked(TPortId) override;
+      CDataConnection **getDIConUnchecked(TPortId) override;
+      CDataConnection *getDOConUnchecked(TPortId) override;
+  };
+} // namespace forte::test

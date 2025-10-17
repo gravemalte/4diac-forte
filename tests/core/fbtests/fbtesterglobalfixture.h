@@ -15,62 +15,52 @@
 #ifndef TESTS_CORE_FBTESTS_FBTESTERGLOBALFIXTURE_H_
 #define TESTS_CORE_FBTESTS_FBTESTERGLOBALFIXTURE_H_
 
-#include "device.h"
-#include "EMB_RES.h"
-
+#include "forte/device.h"
 #include <memory>
+#include "../../../stdfblib/system/src/EMB_RES.h"
 
-class CTesterDevice : public CDevice {
-  public:
-    CTesterDevice(const CStringDictionary::TStringId paInstanceNameId = CStringDictionary::scmInvalidStringId);
+namespace forte::test {
+  class CTesterDevice : public CDevice {
+    public:
+      CTesterDevice(const StringId paInstanceNameId = {});
 
-    void awaitShutdown() override {
-      // nothing to be done to join
-    }
+      void awaitShutdown() override {
+        // nothing to be done to join
+      }
 
-    CIEC_ANY *getDI(size_t) override {
-      return nullptr;
-    }
+      CIEC_ANY *getDI(size_t) override {
+        return nullptr;
+      }
 
-    CDataConnection **getDIConUnchecked(TPortId) override {
-      return nullptr;
-    }
+      CDataConnection **getDIConUnchecked(TPortId) override {
+        return nullptr;
+      }
 
-    CResource &getTestResource() {
-      return *mResource;
-    }
+      CResource &getTestResource() {
+        return *mResource;
+      }
 
-  private:
-    forte::core::CInternalFB<EMB_RES> mResource;
+    private:
+      CInternalFB<iec61499::system::EMB_RES> mResource;
 
-    constexpr static SFBInterfaceSpec scTestDevSpec = {
-    0, nullptr, nullptr, nullptr, nullptr,
-    0, nullptr, nullptr, nullptr, nullptr,
-    0, nullptr, nullptr,
-    0, nullptr, nullptr,
-    0, nullptr,
-    0, nullptr
+      constexpr static SFBInterfaceSpec scTestDevSpec = {};
   };
-};
 
+  /**Global fixture for providing the resource and device needed for fb testing
+   *
+   */
+  class CFBTestDataGlobalFixture {
 
-/**Global fixture for providing the resource and device needed for fb testing
- *
- */
-class CFBTestDataGlobalFixture{
+    public:
+      CFBTestDataGlobalFixture();
+      ~CFBTestDataGlobalFixture();
 
-  public:
-    CFBTestDataGlobalFixture();
-    ~CFBTestDataGlobalFixture();
+      static CResource &getResource() {
+        return smTestDev->getTestResource();
+      }
 
-    static CResource &getResource(){
-      return smTestDev->getTestResource();
-    }
-
-  private:
-    static std::unique_ptr<CTesterDevice> smTestDev;
-};
-
-
-
+    private:
+      static std::unique_ptr<CTesterDevice> smTestDev;
+  };
+} // namespace forte::test
 #endif

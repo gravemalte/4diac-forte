@@ -13,25 +13,24 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include "forte_st_iterator.h"
+#include "forte/forte_st_iterator.h"
 
-#include "forte_uint.h"
-#include "forte_int.h"
+#include "forte/datatypes/forte_uint.h"
+#include "forte/datatypes/forte_int.h"
 
-BOOST_AUTO_TEST_SUITE(ST_FOR_Iterator)
+namespace forte::test {
+  BOOST_AUTO_TEST_SUITE(ST_FOR_Iterator)
 
-BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_INT_IMPLICIT_BY)
-{
+  BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_INT_IMPLICIT_BY) {
     CIEC_INT runner;
     CIEC_INT start(0);
     CIEC_INT to(42);
     for (auto st_lv_synthetic_1 : ST_FOR_ITER<CIEC_INT>(runner, start, to)) {
     }
     BOOST_TEST(static_cast<CIEC_INT::TValueType>(runner) == (static_cast<CIEC_INT::TValueType>(to) + 1));
-}
+  }
 
-BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_INT_EXPLICIT_BY)
-{
+  BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_INT_EXPLICIT_BY) {
     CIEC_INT runner;
     CIEC_INT start(0);
     CIEC_INT to(42);
@@ -39,20 +38,18 @@ BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_INT_EXPLICIT_BY)
     for (auto st_lv_synthetic_1 : ST_FOR_ITER<CIEC_INT>(runner, start, to, by)) {
     }
     BOOST_TEST(static_cast<CIEC_INT::TValueType>(runner) == (static_cast<CIEC_INT::TValueType>(to) + 2));
-}
+  }
 
-BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_UINT_IMPLICIT_BY)
-{
+  BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_UINT_IMPLICIT_BY) {
     CIEC_UINT runner;
     CIEC_UINT start(0);
     CIEC_UINT to(42);
     for (auto st_lv_synthetic_1 : ST_FOR_ITER<CIEC_UINT>(runner, start, to)) {
     }
     BOOST_TEST(static_cast<CIEC_UINT::TValueType>(runner) == (static_cast<CIEC_UINT::TValueType>(to) + 1));
-}
+  }
 
-BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_UINT_EXPLICIT_BY)
-{
+  BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_UINT_EXPLICIT_BY) {
     CIEC_UINT runner;
     CIEC_UINT start(0);
     CIEC_UINT to(42);
@@ -60,20 +57,18 @@ BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_UINT_EXPLICIT_BY)
     for (auto st_lv_synthetic_1 : ST_FOR_ITER<CIEC_UINT>(runner, start, to, by)) {
     }
     BOOST_TEST(static_cast<CIEC_UINT::TValueType>(runner) == (static_cast<CIEC_UINT::TValueType>(to) + 2));
-}
+  }
 
-BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_INT_IMPLICIT_BY_OVERFLOW)
-{
+  BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_INT_IMPLICIT_BY_OVERFLOW) {
     CIEC_INT runner;
     CIEC_INT start(std::numeric_limits<CIEC_INT::TValueType>::max() - 2);
     CIEC_INT to(std::numeric_limits<CIEC_INT>::max());
     for (auto st_lv_synthetic_1 : ST_FOR_ITER<CIEC_INT>(runner, start, to)) {
     }
     BOOST_TEST(static_cast<CIEC_INT::TValueType>(runner) == std::numeric_limits<CIEC_INT::TValueType>::max());
-}
+  }
 
-BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_INT_EXPLICIT_BY_OVERFLOW)
-{
+  BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_INT_EXPLICIT_BY_OVERFLOW) {
     CIEC_INT runner;
     CIEC_INT start(std::numeric_limits<CIEC_INT::TValueType>::max() - 2);
     CIEC_INT to(std::numeric_limits<CIEC_INT>::max());
@@ -81,20 +76,18 @@ BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_INT_EXPLICIT_BY_OVERFLOW)
     for (auto st_lv_synthetic_1 : ST_FOR_ITER<CIEC_INT>(runner, start, to, by)) {
     }
     BOOST_TEST(static_cast<CIEC_INT::TValueType>(runner) == std::numeric_limits<CIEC_INT::TValueType>::max());
-}
+  }
 
-BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_UINT_IMPLICIT_BY_OVERFLOW)
-{
+  BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_UINT_IMPLICIT_BY_OVERFLOW) {
     CIEC_UINT runner;
     CIEC_UINT start(std::numeric_limits<CIEC_UINT::TValueType>::max() - 2);
     CIEC_UINT to(std::numeric_limits<CIEC_UINT>::max());
     for (auto st_lv_synthetic_1 : ST_FOR_ITER<CIEC_UINT>(runner, start, to)) {
     }
     BOOST_TEST(static_cast<CIEC_UINT::TValueType>(runner) == std::numeric_limits<CIEC_UINT::TValueType>::max());
-}
+  }
 
-BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_UINT_EXPLICIT_BY_OVERFLOW)
-{
+  BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_UINT_EXPLICIT_BY_OVERFLOW) {
     CIEC_UINT runner;
     CIEC_UINT start(std::numeric_limits<CIEC_UINT::TValueType>::max() - 2);
     CIEC_UINT to(std::numeric_limits<CIEC_UINT>::max());
@@ -102,10 +95,9 @@ BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_UINT_EXPLICIT_BY_OVERFLOW)
     for (auto st_lv_synthetic_1 : ST_FOR_ITER<CIEC_UINT>(runner, start, to, by)) {
     }
     BOOST_TEST(static_cast<CIEC_UINT::TValueType>(runner) == std::numeric_limits<CIEC_UINT::TValueType>::max());
-}
+  }
 
-BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_INT_EXPLICIT_BY_UNDERFLOW)
-{
+  BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_INT_EXPLICIT_BY_UNDERFLOW) {
     CIEC_INT runner;
     CIEC_INT start(std::numeric_limits<CIEC_INT::TValueType>::min() + 2);
     CIEC_INT to(std::numeric_limits<CIEC_INT>::min());
@@ -113,10 +105,9 @@ BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_INT_EXPLICIT_BY_UNDERFLOW)
     for (auto st_lv_synthetic_1 : ST_FOR_ITER<CIEC_INT>(runner, start, to, by)) {
     }
     BOOST_TEST(static_cast<CIEC_INT::TValueType>(runner) == std::numeric_limits<CIEC_INT::TValueType>::min());
-}
+  }
 
-BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_UINT_EXPLICIT_BY_UNDERFLOW)
-{
+  BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_UINT_EXPLICIT_BY_UNDERFLOW) {
     CIEC_UINT runner;
     CIEC_UINT start(std::numeric_limits<CIEC_UINT::TValueType>::min() + 2);
     CIEC_UINT to(std::numeric_limits<CIEC_UINT>::min());
@@ -124,10 +115,9 @@ BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_UINT_EXPLICIT_BY_UNDERFLOW)
     for (auto st_lv_synthetic_1 : ST_FOR_ITER<CIEC_UINT, CIEC_INT>(runner, start, to, by)) {
     }
     BOOST_TEST(static_cast<CIEC_UINT::TValueType>(runner) == 0);
-}
+  }
 
-BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_INT_ABORT_BEFORE_FIRST_LOOP)
-{
+  BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_INT_ABORT_BEFORE_FIRST_LOOP) {
     CIEC_INT runner;
     CIEC_INT start(0);
     CIEC_INT to(-1);
@@ -135,6 +125,7 @@ BOOST_AUTO_TEST_CASE(ST_ITER_CIEC_INT_ABORT_BEFORE_FIRST_LOOP)
     for (auto st_lv_synthetic_1 : ST_FOR_ITER<CIEC_INT>(runner, start, to, by)) {
     }
     BOOST_TEST(static_cast<CIEC_INT::TValueType>(runner) == 0);
-}
+  }
 
-BOOST_AUTO_TEST_SUITE_END()
+  BOOST_AUTO_TEST_SUITE_END()
+} // namespace forte::test

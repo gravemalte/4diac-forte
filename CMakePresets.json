@@ -1,0 +1,158 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "installDir": "${sourceDir}/install/${presetName}",
+      "cacheVariables": {
+        "FORTE_COM_ETH": "ON",
+        "FORTE_COM_FBDK": "ON",
+        "FORTE_COM_LOCAL": "ON",
+        "FORTE_MODULE_CONVERT": "ON",
+        "FORTE_MODULE_IEC61131": "ON",
+        "FORTE_MODULE_UTILS": "ON"
+      }
+    },
+    {
+      "name": "base-tests",
+      "hidden": true,
+      "inherits": "base",
+      "cacheVariables": {
+        "FORTE_COM_HTTP": "ON",
+        "FORTE_COM_RAW": "ON",
+        "FORTE_COM_SER": "ON",
+        "FORTE_COM_STRUCT_MEMBER": "ON",
+        "FORTE_IO": "ON",
+        "FORTE_MODULE_RECONFIGURATION": "ON",
+        "FORTE_MODULE_RT_Events": "ON",
+        "FORTE_MODULE_SIGNALPROCESSING": "ON",
+        "FORTE_TESTS": "ON",
+        "FORTE_TEST_SANITIZE": "ON"
+      }
+    },
+    {
+      "name": "tests",
+      "hidden": true,
+      "inherits": "base-tests",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "FORTE_BUILD_STATIC_LIBRARY": "ON",
+        "FORTE_BUILD_SHARED_LIBRARY": "ON",
+        "FORTE_C_INTERFACE": "ON",
+        "FORTE_TRACE_CTF": "ON"
+      }
+    },
+    {
+      "name": "systemtests",
+      "hidden": true,
+      "inherits": "base-tests",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "FORTE_SYSTEM_TESTS": "ON"
+      }
+    },
+    {
+      "name": "posix",
+      "hidden": true,
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "FORTE_ARCHITECTURE": "Posix",
+        "CMAKE_INSTALL_RPATH": "$ORIGIN/../lib",
+        "CMAKE_INSTALL_RPATH_USE_LINK_PATH": "ON"
+      }
+    },
+    {
+      "name": "posix-debug",
+      "displayName": "Debug (Posix)",
+      "inherits": "posix",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "posix-release",
+      "displayName": "Release (Posix)",
+      "inherits": "posix",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "posix-tests",
+      "displayName": "Tests (Posix)",
+      "inherits": [
+        "tests",
+        "posix"
+      ]
+    },
+    {
+      "name": "posix-systemtests",
+      "displayName": "System Tests (Posix)",
+      "inherits": [
+        "systemtests",
+        "posix"
+      ]
+    },
+    {
+      "name": "windows",
+      "hidden": true,
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "cacheVariables": {
+        "FORTE_ARCHITECTURE": "Win32"
+      },
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      }
+    },
+    {
+      "name": "windows-debug",
+      "displayName": "Debug (Windows)",
+      "inherits": "windows",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "windows-release",
+      "displayName": "Release (Windows)",
+      "inherits": "windows",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "windows-tests",
+      "displayName": "Tests (Windows)",
+      "inherits": [
+        "tests",
+        "windows"
+      ]
+    },
+    {
+      "name": "windows-systemtests",
+      "displayName": "System Tests (Windows)",
+      "inherits": [
+        "systemtests",
+        "windows"
+      ]
+    }
+  ]
+}

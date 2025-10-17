@@ -158,18 +158,6 @@ Additionally, try to minimize the visibilty of a variable to its necessary minim
 
 \subsection{Prefixes}
 The following prefixes have to be applied to identifiers:\\
-\begin{tabular}{ll}
-&\\
-\textbf{Type Definitions} & \textbf{Scope} \\
-\begin{tabular}{ll}
-S& for structures \\
-C& for class\\
-I& for interface\\ 
-E& for enum\\
-T& for types (e.g. typedef in C++)\\ 
-&\\
-&\\
-\end{tabular} &
 
 \begin{tabular}{ll}
 m & for member variables of classes\\
@@ -182,11 +170,9 @@ scm & static constant member\\
 cg & for a global constant\\
 \end{tabular}	\vspace{5mm}\\
 
-\end{tabular}
 
 \paragraph{Examples}
 \begin{quote}
-\verb|class CFunctionBlock;|\\
 \verb|int number;|\\
 \verb|int *pointer = &number;|\\
 \verb|char key;|\\
@@ -254,8 +240,11 @@ If an infinite loop is needed use \verb|while(true)|.
 
 Regardless of what type of loop you use, always use curly brackets for the loop body.
 
-\subsection{Eclipse}
-For users of the IDE Eclipse with the CDT plugin we provide a style file that correctly formats your code to this rules. The file can be found in FORTE's main directory and is called \verb=fortestyle.xml=. This file can be imported into your FORTE project under the Menu Project/Properties and there in the tree element C/C++ General/Code Style. With the FORTE style file you can simple correctly format your file by pressing \verb=<ctrl>+<shift>+f=.
+\subsection{IDE Settings}
+We provide a style file that correctly formats your code according to these rules.
+The file can be found in FORTE's main directory and is called \verb=.clang-format=.
+This file can also be used by many widespread IDEs, including Eclipse CDT, CLion and Visual Studio Code.
+Please refer to the documentation of your IDE if \verb=.clang-format= is supported and how to use it.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Exceptions for IEC 61499 Elements}

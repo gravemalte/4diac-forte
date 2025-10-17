@@ -12,39 +12,44 @@
  *******************************************************************************/
 
 #include "forte_datatypetest.h"
-#ifdef FORTE_ENABLE_GENERATED_SOURCE_CPP
-#include "forte_datatypetest_gen.cpp"
-#endif
 
-DEFINE_FIRMWARE_DATATYPE(DataTypeTest, g_nStringIdDataTypeTest);
+#include "forte/com/opc_ua/opcua_types.h"
+#include "generated/ua_types_fordiacNamespace_generated.h"
 
-CIEC_DataTypeTest::CIEC_DataTypeTest() :
-    CIEC_STRUCT(),
-    var_Name(""),
-    var_Age(0),
-    var_IsRegistered(false) {
-}
+using namespace forte::literals;
 
-CStringDictionary::TStringId CIEC_DataTypeTest::getStructTypeNameID() const {
-  return g_nStringIdDataTypeTest;
-}
-
-CIEC_ANY *CIEC_DataTypeTest::getMember(size_t paMemberIndex) {
-  switch (paMemberIndex) {
-    case 0: return &var_Name;
-    case 1: return &var_Age;
-    case 2: return &var_IsRegistered;
+namespace forte::com_infra::opc_ua::test {
+  namespace {
+    [[maybe_unused]] const OPC_UA_External_Types::Entry
+        entry("DataTypeTest"_STRID, &UA_UA_TYPES_FORDIACNAMESPACE[UA_UA_TYPES_FORDIACNAMESPACE_DATATYPETEST]);
   }
-  return nullptr;
-}
 
-const CIEC_ANY *CIEC_DataTypeTest::getMember(size_t paMemberIndex) const {
-  switch (paMemberIndex) {
-    case 0: return &var_Name;
-    case 1: return &var_Age;
-    case 2: return &var_IsRegistered;
+  DEFINE_FIRMWARE_DATATYPE(DataTypeTest, "DataTypeTest"_STRID);
+
+  CIEC_DataTypeTest::CIEC_DataTypeTest() : CIEC_STRUCT(), var_Name(""_STRING), var_Age(0), var_IsRegistered(false) {
   }
-  return nullptr;
-}
 
-const CStringDictionary::TStringId CIEC_DataTypeTest::scmElementNames[] = { g_nStringIdName, g_nStringIdAge, g_nStringIdIsRegistered };
+  StringId CIEC_DataTypeTest::getStructTypeNameID() const {
+    return "DataTypeTest"_STRID;
+  }
+
+  CIEC_ANY *CIEC_DataTypeTest::getMember(size_t paMemberIndex) {
+    switch (paMemberIndex) {
+      case 0: return &var_Name;
+      case 1: return &var_Age;
+      case 2: return &var_IsRegistered;
+    }
+    return nullptr;
+  }
+
+  const CIEC_ANY *CIEC_DataTypeTest::getMember(size_t paMemberIndex) const {
+    switch (paMemberIndex) {
+      case 0: return &var_Name;
+      case 1: return &var_Age;
+      case 2: return &var_IsRegistered;
+    }
+    return nullptr;
+  }
+
+  const StringId CIEC_DataTypeTest::scmElementNames[] = {"Name"_STRID, "Age"_STRID, "IsRegistered"_STRID};
+} // namespace forte::com_infra::opc_ua::test

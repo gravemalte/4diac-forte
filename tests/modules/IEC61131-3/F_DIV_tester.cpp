@@ -13,25 +13,24 @@
  *******************************************************************************/
 #include "../../core/fbtests/fbtestfixture.h"
 
-#ifdef FORTE_ENABLE_GENERATED_SOURCE_CPP
-#include "F_DIV_tester_gen.cpp"
-#endif
+using namespace forte::literals;
 
-struct F_DIV_TestFixture : public CFBTestFixtureBase{
+namespace forte::iec61131::arithmetic {
+  struct F_DIV_TestFixture : public test::CFBTestFixtureBase {
 
-  F_DIV_TestFixture() : CFBTestFixtureBase(g_nStringIdF_DIV) {
-    setInputData({&mIn1_DIV, &mIn2_DIV});
-    setOutputData({&mOut_DIV});
-    CFBTestFixtureBase::setup();
-  }
+      F_DIV_TestFixture() : CFBTestFixtureBase("iec61131::arithmetic::F_DIV"_STRID) {
+        setInputData({&mIn1_DIV, &mIn2_DIV});
+        setOutputData({&mOut_DIV});
+        setup();
+      }
 
-    CIEC_INT mIn1_DIV; //DATA INPUT
-    CIEC_INT mIn2_DIV; //DATA INPUT
+      CIEC_INT mIn1_DIV; // DATA INPUT
+      CIEC_INT mIn2_DIV; // DATA INPUT
 
-    CIEC_INT mOut_DIV;
-};
+      CIEC_INT mOut_DIV;
+  };
 
-BOOST_FIXTURE_TEST_SUITE( F_DIV_Tests, F_DIV_TestFixture)
+  BOOST_FIXTURE_TEST_SUITE(F_DIV_Tests, F_DIV_TestFixture)
 
   BOOST_AUTO_TEST_CASE(validDivision) {
     mIn1_DIV = CIEC_INT(30);
@@ -50,4 +49,5 @@ BOOST_FIXTURE_TEST_SUITE( F_DIV_Tests, F_DIV_TestFixture)
     BOOST_CHECK(checkForSingleOutputEventOccurence(0));
   }
 
-BOOST_AUTO_TEST_SUITE_END()
+  BOOST_AUTO_TEST_SUITE_END()
+} // namespace forte::iec61131::arithmetic

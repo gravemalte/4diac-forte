@@ -17,97 +17,101 @@
 #ifndef TESTS_CORE_FBTESTS_FBTESTFIXTURE_H_
 #define TESTS_CORE_FBTESTS_FBTESTFIXTURE_H_
 
-#include "fortenew.h"
-#include "genfb.h"
-#include "if2indco.h"
-#include "forte_sync.h"
+#include "forte/datatypes/forte_any.h"
+#include "forte/genfb.h"
+#include "forte/arch/forte_sync.h"
 #include <boost/test/unit_test.hpp>
 #include <vector>
 #include <deque>
 
 #include "forte_boost_output_support.h"
 
-class CFBTestFixtureBase : public CGenFunctionBlock<CFunctionBlock> {
-  public:
-    ~CFBTestFixtureBase();
+namespace forte::test {
+  class CFBTestFixtureBase : public CGenFunctionBlock<CFunctionBlock> {
+    public:
+      ~CFBTestFixtureBase();
 
-    bool initialize() override;
+      bool initialize() override;
 
-    CStringDictionary::TStringId getFBTypeId() const override {
-      return mTypeId;
-    }
+      StringId getFBTypeId() const override {
+        return mTypeId;
+      }
 
-  protected:
-    explicit CFBTestFixtureBase(CStringDictionary::TStringId paTypeId);
+    protected:
+      explicit CFBTestFixtureBase(StringId paTypeId);
 
-    void setup(const char* paConfigString = nullptr);
+      void setup();
 
-    bool createInterfaceSpec(const char *paConfigString, SFBInterfaceSpec &paInterfaceSpec) override;
+      bool createInterfaceSpec(const char *paConfigString, SFBInterfaceSpec &paInterfaceSpec) override;
 
-    /*!\brief invoke the FB under Test with the given event id
-     *
-     * @param paEIId input event id to be sent to the fb under test
-     */
-    void triggerEvent(TPortId paEIId);
+      /*!\brief invoke the FB under Test with the given event id
+       *
+       * @param paEIId input event id to be sent to the fb under test
+       */
+      void triggerEvent(TPortId paEIId);
 
-    TEventID pullFirstChainEventID();
+      TEventID pullFirstChainEventID();
 
-    bool eventChainEmpty();
+      bool eventChainEmpty();
 
-    /*!\brief Remove all events from the event chain bringing the tester into a defined state
-     *
-     */
-    void clearEventChain();
+      /*!\brief Remove all events from the event chain bringing the tester into a defined state
+       *
+       */
+      void clearEventChain();
 
-    /** Check if only one output event of the given event output Id has been sent by the FB
-     *
-     * @param paExpectedEOId the output event Id to be checked for
-     * @return true if only one event of the given Id is in the event queue
-     */
-    bool checkForSingleOutputEventOccurence(TEventID paExpectedEOId);
+      /** Check if only one output event of the given event output Id has been sent by the FB
+       *
+       * @param paExpectedEOId the output event Id to be checked for
+       * @return true if only one event of the given Id is in the event queue
+       */
+      bool checkForSingleOutputEventOccurence(TEventID paExpectedEOId);
 
-    void setInputData(std::initializer_list<CIEC_ANY*> paInputData);
-    void setOutputData(std::initializer_list<CIEC_ANY*> paOutputData);
+      void setInputData(std::initializer_list<CIEC_ANY *> paInputData);
+      void setOutputData(std::initializer_list<CIEC_ANY *> paOutputData);
 
-  private:
-    void executeEvent(TEventID paEIID, CEventChainExecutionThread *const paECET) override;
+      void createGenInputData() override;
+      CIEC_ANY *getDI(size_t paIndex) override {
+        return mGenDIs[paIndex].get();
+      }
 
-    void readInputData(TEventID) override {
-    }
+    private:
+      void executeEvent(TEventID paEIID, CEventChainExecutionThread *const paECET) override;
 
-    void writeOutputData(TEventID) override {
-    }
+      void readInputData(TEventID) override {
+      }
 
-    void setupTestInterface();
-    void performFBResetTests();
-    void performFBDeleteTests();
+      void writeOutputData(TEventID) override {
+      }
 
-    /* Check if all data inputs and data outputs as given in the interface struct can be accessed and
-     * if the data types are equal to the data provided by the fb tester
-     */
-    void performDataInterfaceTests();
+      void setupTestInterface();
+      void performFBResetTests();
+      void performFBDeleteTests();
 
-    void createEventOutputConnections();
-    void createDataInputConnections();
-    void createDataOutputConnections();
+      /* Check if all data inputs and data outputs as given in the interface struct can be accessed and
+       * if the data types are equal to the data provided by the fb tester
+       */
+      void performDataInterfaceTests();
 
-    CStringDictionary::TStringId mTypeId;
-    std::string mConfigString;
-    CFunctionBlock *mFBUnderTest;
-    std::vector<CInterface2InternalDataConnection *> mDIConnections;
+      void createEventOutputConnections();
+      void createDataInputConnections();
+      void createDataOutputConnections();
 
-    /*! \brief list for storing the output events received from the testee
-     *
-     * TODO add timestamps to the list
-     */
-    std::deque<TEventID> mFBOutputEvents;
+      StringId mTypeId;
+      std::string mConfigString;
+      CFunctionBlock *mFBUnderTest;
+      std::vector<std::unique_ptr<CDataConnection>> mDIConnections;
+      std::vector<std::unique_ptr<CIEC_ANY>> mGenDIs;
 
-    CSyncObject mOutputEventLock;
+      /*! \brief list for storing the output events received from the testee
+       *
+       * TODO add timestamps to the list
+       */
+      std::deque<TEventID> mFBOutputEvents;
 
-    std::vector<CIEC_ANY *> mInputDataBuffers;
-    std::vector<CIEC_ANY *> mOutputDataBuffers;
-};
+      arch::CSyncObject mOutputEventLock;
 
-
-
+      std::vector<CIEC_ANY *> mInputDataBuffers;
+      std::vector<CIEC_ANY *> mOutputDataBuffers;
+  };
+} // namespace forte::test
 #endif /* TESTS_CORE_FBTESTS_FBTESTFIXTURE_H_ */

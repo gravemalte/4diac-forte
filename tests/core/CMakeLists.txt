@@ -13,8 +13,8 @@
 #SET(SOURCE_GROUP ${SOURCE_GROUP}\\core)
 
 forte_test_add_inc_directories(${CMAKE_CURRENT_SOURCE_DIR})
-  
-forte_test_add_sourcefile_cpp(stringdicttests.cpp)
+
+forte_test_add_sourcefile_cpp(stringidtests.cpp)
 forte_test_add_sourcefile_cpp(typelibdatatypetests.cpp)
 forte_test_add_sourcefile_cpp(nameidentifiertest.cpp)
 forte_test_add_sourcefile_cpp(mgmstatemachinetest.cpp)
@@ -27,8 +27,5 @@ forte_test_add_sourcefile_cpp(fbcontainermock.cpp)
 forte_test_add_subdirectory(datatypes)
 forte_test_add_subdirectory(cominfra)
 forte_test_add_subdirectory(fbtests)
-forte_test_add_subdirectory(utils)
-
-if(FORTE_TRACE_CTF)
-  forte_test_add_subdirectory(trace)
-endif(FORTE_TRACE_CTF)
+forte_test_add_subdirectory(util)
+forte_test_add_subdirectory(trace)

@@ -14,36 +14,37 @@
 #ifndef _FORTE_DATATYPETEST_H_
 #define _FORTE_DATATYPETEST_H_
 
-#include "forte_struct.h"
-#include "forte_string.h"
-#include "forte_sint.h"
-#include "forte_bool.h"
+#include "forte/datatypes/forte_struct.h"
+#include "forte/datatypes/forte_string.h"
+#include "forte/datatypes/forte_sint.h"
+#include "forte/datatypes/forte_bool.h"
 
-class CIEC_DataTypeTest : public CIEC_STRUCT {
-  DECLARE_FIRMWARE_DATATYPE(DataTypeTest)
+namespace forte::com_infra::opc_ua::test {
+  class CIEC_DataTypeTest : public CIEC_STRUCT {
+      DECLARE_FIRMWARE_DATATYPE(DataTypeTest)
 
-  public:
-    CIEC_DataTypeTest();
+    public:
+      CIEC_DataTypeTest();
 
-    CIEC_STRING var_Name;
-    CIEC_SINT var_Age;
-    CIEC_BOOL var_IsRegistered;
+      CIEC_STRING var_Name;
+      CIEC_SINT var_Age;
+      CIEC_BOOL var_IsRegistered;
 
-    size_t getStructSize() const override {
-      return 3;
-    }
+      size_t getStructSize() const override {
+        return 3;
+      }
 
-    const CStringDictionary::TStringId* elementNames() const override {
-      return scmElementNames;
-    }
+      const StringId *elementNames() const override {
+        return scmElementNames;
+      }
 
-    CStringDictionary::TStringId getStructTypeNameID() const override;
+      StringId getStructTypeNameID() const override;
 
-    CIEC_ANY *getMember(size_t paMemberIndex) override;
-    const CIEC_ANY *getMember(size_t paMemberIndex) const override;
+      CIEC_ANY *getMember(size_t paMemberIndex) override;
+      const CIEC_ANY *getMember(size_t paMemberIndex) const override;
 
-  private:
-    static const CStringDictionary::TStringId scmElementNames[];
-};
-
+    private:
+      static const StringId scmElementNames[];
+  };
+} // namespace forte::com_infra::opc_ua::test
 #endif //_FORTE_DATATYPETEST_H_

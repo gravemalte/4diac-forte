@@ -1,8 +1,13 @@
 /Debug/
 /bin/
 /build/
+/install/
 
 /src_gen/
+
+# CMake user-defined files
+
+/CMakeUserPresets.json
 
 # CMake intermediate files
 
@@ -18,7 +23,6 @@ file_list.txt
 /forte_config_opc_ua.h
 /stringlist.cpp
 /stringlist.h
-/core
 /doc/api_doc/html
 
 # binaries
@@ -31,3 +35,4 @@ file_list.txt
 /.vscode/
 /.vs/
 /.idea/
+/.cache/
