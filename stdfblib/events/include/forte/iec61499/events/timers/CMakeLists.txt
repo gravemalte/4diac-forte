@@ -12,13 +12,12 @@
 #      - initial API and implementation and/or initial documentation
 #############################################################################
 
-target_sources(forte-core PUBLIC
+target_sources(forte-events PUBLIC
         FILE_SET HEADERS
         FILES
-        forte_sem.h
-        forte_sync.h
-        forte_thread.h
-        sockhand.h
-        $<$<BOOL:${FORTE_FREERTOS_PLUS_TCP}>:${CMAKE_CURRENT_SOURCE_DIR}/sockhand_plustcp.h>
-        $<$<NOT:$<BOOL:${FORTE_FREERTOS_PLUS_TCP}>>:${CMAKE_CURRENT_SOURCE_DIR}/sockhand_lwip.h>
+        E_PULSE_fbt.h
+        E_TOF_fbt.h
+        E_TONOF_fbt.h
+        E_TON_fbt.h
+        E_TP_fbt.h
 )

@@ -9,7 +9,7 @@
 # and/or initial documentation
 # *******************************************************************************/
 
-if (NOT FORTE_ARCHITECTURE STREQUAL "Posix")
+if (NOT LINUX)
     return()
 endif ()
 
@@ -18,6 +18,8 @@ option(FORTE_MODULE_Raspberry_SPS "Interacting with GPIOs Raspberry SPS" OFF)
 if (NOT FORTE_MODULE_Raspberry_SPS)
     return()
 endif ()
+
+message(FATAL_ERROR "This module has not yet been ported to 4diac FORTE 3.0")
 
 # ############################################################################
 # i2c-dev

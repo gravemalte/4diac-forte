@@ -9,7 +9,7 @@
 # documentation *    Jose Cabral - added fileWriter_fbt
 # *******************************************************************************/
 
-if (NOT FORTE_ARCHITECTURE STREQUAL "Posix")
+if (NOT LINUX)
     return()
 endif ()
 
@@ -18,6 +18,8 @@ option(FORTE_MODULE_LMS_EV3 "I/O support for Lego Mindstorms EV3 using the ev3_d
 if (NOT FORTE_MODULE_LMS_EV3)
     return()
 endif ()
+
+message(FATAL_ERROR "This module has not yet been ported to 4diac FORTE 3.0")
 
 # ############################################################################
 # LMS_EV3

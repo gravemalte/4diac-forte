@@ -9,10 +9,7 @@
 # documentation
 # *******************************************************************************/
 
-# ############################################################################
-# PiFace Raspberry Pi expansion board
-# ############################################################################
-if (NOT FORTE_ARCHITECTURE STREQUAL "Posix")
+if (NOT LINUX)
     return()
 endif ()
 
@@ -21,6 +18,8 @@ option(FORTE_MODULE_MLPI "Process interface using the MLPI functions for Bosch R
 if (NOT FORTE_MODULE_MLPI)
     return()
 endif ()
+
+message(FATAL_ERROR "This module has not yet been ported to 4diac FORTE 3.0")
 
 set(FORTE_COM_MLPI_DIR
     ""

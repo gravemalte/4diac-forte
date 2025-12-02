@@ -14,7 +14,7 @@
 # OPC Com Layer
 # ############################################################################
 
-if (NOT FORTE_ARCHITECTURE STREQUAL "Win32")
+if (NOT WIN32)
     return()
 endif ()
 
@@ -58,3 +58,5 @@ target_include_directories(forte-com-opc PRIVATE ${FORTE_COM_OPC_BOOST_ROOT})
 target_include_directories(forte-com-opc PRIVATE ${FORTE_COM_OPC_LIB_ROOT}/include/OPCClientToolKit)
 target_link_directories(forte-com-opc PUBLIC ${FORTE_COM_OPC_LIB_ROOT}/lib)
 target_link_libraries(forte-com-opc PRIVATE OPCClientToolKit)
+
+install(TARGETS forte-com-opc EXPORT forte-export FILE_SET HEADERS)

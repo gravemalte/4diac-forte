@@ -8,7 +8,7 @@
 # Contributors: Ben Schneider - Initial implementation
 # ############################################################################
 
-if (NOT FORTE_ARCHITECTURE STREQUAL "Posix")
+if (NOT LINUX)
     return()
 endif ()
 
@@ -23,3 +23,5 @@ add_library(forte-com-tsn
 )
 target_link_libraries(forte-com-tsn PUBLIC forte-core)
 target_link_libraries(forte PUBLIC $<IF:$<BOOL:${BUILD_SHARED_LIBS}>,forte-com-tsn,$<LINK_LIBRARY:WHOLE_ARCHIVE,forte-com-tsn>>)
+
+install(TARGETS forte-com-tsn EXPORT forte-export FILE_SET HEADERS)

@@ -29,10 +29,19 @@ target_compile_options(forte-core PUBLIC
 ###############################################################################
 # Architectures
 
-macro(forte_register_architecture arch)
-    set_property(TARGET forte-core APPEND PROPERTY forte_architectures ${arch})
-    if (NOT FORTE_ARCHITECTURE STREQUAL "${arch}")
+set(FORTE_ARCHITECTURE ${CMAKE_SYSTEM_NAME} CACHE STRING "Architecture for which to build 4diac FORTE")
+
+macro(forte_register_architecture canonical_name)
+    set(archs "${canonical_name}" "${ARGN}")
+    foreach (arch IN LISTS archs)
+        set_property(TARGET forte-core APPEND PROPERTY forte_architectures ${arch})
+    endforeach ()
+    if (NOT FORTE_ARCHITECTURE IN_LIST archs)
         return()
+    endif ()
+    if (NOT FORTE_ARCHITECTURE STREQUAL canonical_name)
+        message(STATUS "Using ${canonical_name} as FORTE_ARCHITECTURE")
+        set(FORTE_ARCHITECTURE "${canonical_name}")
     endif ()
 endmacro()
 
@@ -42,7 +51,6 @@ add_subdirectory(c_interface)
 # add_subdirectory(be_m1)
 # add_subdirectory(ecos)
 add_subdirectory(freeRTOS)
-# add_subdirectory(macos)
 # add_subdirectory(netos)
 # add_subdirectory(pikeos_posix)
 # add_subdirectory(plcnext)
@@ -53,14 +61,10 @@ add_subdirectory(fake_time)
 add_subdirectory(win32)
 # add_subdirectory(zephyr)
 
-###############################################################################
-# Configuration Options
-
-set(FORTE_ARCHITECTURE "None" CACHE STRING "Architecture for which to build 4diac FORTE")
 get_property(architectures TARGET forte-core PROPERTY forte_architectures)
 list(SORT architectures)
 set_property(CACHE FORTE_ARCHITECTURE PROPERTY STRINGS None ${architectures})
 
-if (FORTE_ARCHITECTURE STREQUAL "None")
-    message(FATAL_ERROR "No FORTE_ARCHITECTURE selected. Use one of ${architectures}")
+if (NOT FORTE_ARCHITECTURE IN_LIST architectures)
+    message(FATAL_ERROR "Invalid FORTE_ARCHITECTURE selected. Use one of ${architectures}")
 endif ()

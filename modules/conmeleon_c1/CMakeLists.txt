@@ -9,7 +9,7 @@
 # Contributors: Alois Zoitl and Herwig Eichler
 # *******************************************************************************/
 
-if (NOT FORTE_ARCHITECTURE STREQUAL "Posix")
+if (NOT LINUX)
     return()
 endif ()
 
@@ -18,6 +18,8 @@ option(FORTE_MODULE_CONMELEON_C1 "Interacting with the CONMELEON C1 IO board" OF
 if (NOT FORTE_MODULE_CONMELEON_C1)
     return()
 endif ()
+
+message(FATAL_ERROR "This module has not yet been ported to 4diac FORTE 3.0")
 
 message(CHECK_START
         "Module Conmeleon C1 is deprecated and may be removed in future releases"

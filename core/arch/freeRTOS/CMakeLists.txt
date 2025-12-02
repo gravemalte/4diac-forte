@@ -17,13 +17,17 @@
 
 forte_register_architecture(FreeRTOSLwIP)
 
-target_include_directories(
-	forte-core 
-	PUBLIC
-    "${FORTE_FREERTOS_INCLUDE_DIR}"
-)
+set(FORTE_FREERTOS_INCLUDE_DIR "" CACHE PATH "Path to FreeRTOS include files (leave empty for installed source code)")
+if (FORTE_FREERTOS_INCLUDE_DIR)
+    target_include_directories(
+            forte-core
+            PUBLIC
+            "${FORTE_FREERTOS_INCLUDE_DIR}"
+    )
+endif ()
 
-
+option(FORTE_FREERTOS_PLUS_TCP "Use FreeRTOS-plus-TCP" OFF)
+target_compile_definitions(forte-core PUBLIC $<$<BOOL:${FORTE_FREERTOS_PLUS_TCP}>:FORTE_FREERTOS_PLUS_TCP>)
 
 add_subdirectory(include)
 add_subdirectory(src)

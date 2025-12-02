@@ -12,7 +12,7 @@
 # ############################################################################
 # PiFace Raspberry Pi expansion board
 # ############################################################################
-if (NOT FORTE_ARCHITECTURE STREQUAL "Posix")
+if (NOT LINUX)
     return()
 endif ()
 
@@ -21,6 +21,8 @@ option(FORTE_MODULE_PiFace "PiFace and PiFace like Raspberry PI expansion boards
 if (NOT FORTE_MODULE_PiFace)
     return()
 endif ()
+
+message(FATAL_ERROR "This module has not yet been ported to 4diac FORTE 3.0")
 
 forte_set_process_interface("PiFace" IX QX)
 add_library(forte-piface

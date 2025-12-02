@@ -9,7 +9,7 @@
 # documentation
 # *******************************************************************************/
 
-if (NOT FORTE_ARCHITECTURE STREQUAL "Posix")
+if (NOT LINUX)
     return()
 endif ()
 
@@ -18,6 +18,8 @@ option(FORTE_MODULE_Odroid "Interacting with GPIOs and analogue inputs of the Od
 if (NOT FORTE_MODULE_Odroid)
     return()
 endif ()
+
+message(FATAL_ERROR "This module has not yet been ported to 4diac FORTE 3.0")
 
 # ############################################################################
 # SysFs
