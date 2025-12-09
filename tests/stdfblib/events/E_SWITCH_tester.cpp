@@ -12,59 +12,59 @@
  *   Alois Zoitl - migrated fb tests to boost test infrastructure
  *******************************************************************************/
 #include "../../core/fbtests/fbtestfixture.h"
-#include <forte_bool.h>
+#include "forte/iec61131_functions.h"
+#include "forte/datatypes/forte_bool.h"
 
-#ifdef FORTE_ENABLE_GENERATED_SOURCE_CPP
-#include "E_SWITCH_tester_gen.cpp"
-#endif
+using namespace forte::literals;
 
+namespace forte::iec61499::events::test {
+  struct E_SWITCH_TestFixture : public forte::test::CFBTestFixtureBase {
 
-struct E_SWITCH_TestFixture : public CFBTestFixtureBase{
+      E_SWITCH_TestFixture() : CFBTestFixtureBase("iec61499::events::E_SWITCH"_STRID) {
+        setInputData({&mInG});
+        setup();
+      }
 
-    E_SWITCH_TestFixture() : CFBTestFixtureBase(g_nStringIdE_SWITCH){
-      SETUP_INPUTDATA(&mInG);
-      CFBTestFixtureBase::setup();
-    }
+      CIEC_BOOL mInG; // DATA INPUT
+  };
 
-    CIEC_BOOL mInG; //DATA INPUT
-};
+  BOOST_FIXTURE_TEST_SUITE(SwitchTests, E_SWITCH_TestFixture)
 
-BOOST_FIXTURE_TEST_SUITE( SwitchTests, E_SWITCH_TestFixture)
-
-  BOOST_AUTO_TEST_CASE(singleE0){
-    mInG = false;
+  BOOST_AUTO_TEST_CASE(singleE0) {
+    mInG = false_BOOL;
     triggerEvent(0);
     BOOST_CHECK(checkForSingleOutputEventOccurence(0));
   }
 
-  BOOST_AUTO_TEST_CASE(SingleE1){
-    mInG = true;
+  BOOST_AUTO_TEST_CASE(SingleE1) {
+    mInG = true_BOOL;
     triggerEvent(0);
     BOOST_CHECK(checkForSingleOutputEventOccurence(1));
   }
 
-  BOOST_AUTO_TEST_CASE(MultipleE0){
-    mInG = false;
-    for(unsigned int i = 0; i < 1000; ++i){
+  BOOST_AUTO_TEST_CASE(MultipleE0) {
+    mInG = false_BOOL;
+    for (unsigned int i = 0; i < 1000; ++i) {
       triggerEvent(0);
       BOOST_CHECK(checkForSingleOutputEventOccurence(0));
     }
   }
 
-  BOOST_AUTO_TEST_CASE(MultipleE1){
-    mInG = true;
-    for(unsigned int i = 0; i < 1000; ++i){
+  BOOST_AUTO_TEST_CASE(MultipleE1) {
+    mInG = true_BOOL;
+    for (unsigned int i = 0; i < 1000; ++i) {
       triggerEvent(0);
       BOOST_CHECK(checkForSingleOutputEventOccurence(1));
     }
   }
 
-  BOOST_AUTO_TEST_CASE(Alternate){
-    for(unsigned int i = 0; i < 1000; ++i){
-      mInG = !mInG;
+  BOOST_AUTO_TEST_CASE(Alternate) {
+    for (unsigned int i = 0; i < 1000; ++i) {
+      mInG = func_NOT(mInG);
       triggerEvent(0);
       BOOST_CHECK(checkForSingleOutputEventOccurence((mInG) ? 1 : 0));
     }
   }
 
-BOOST_AUTO_TEST_SUITE_END()
+  BOOST_AUTO_TEST_SUITE_END()
+} // namespace forte::iec61499::events::test

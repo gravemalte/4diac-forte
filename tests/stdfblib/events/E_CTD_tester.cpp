@@ -11,97 +11,97 @@
  *   Alois Zoitl - migrated fb tests to boost test infrastructure
  *******************************************************************************/
 #include "../../core/fbtests/fbtestfixture.h"
-#include <forte_uint.h>
-#include <forte_bool.h>
+#include "forte/iec61131_functions.h"
+#include "forte/datatypes/forte_uint.h"
+#include "forte/datatypes/forte_bool.h"
 
+using namespace forte::literals;
 
-#ifdef FORTE_ENABLE_GENERATED_SOURCE_CPP
-#include "E_CTD_tester_gen.cpp"
-#endif
+namespace forte::iec61499::events::test {
+  struct E_CTD_TestFixture : public forte::test::CFBTestFixtureBase {
 
-struct E_CTD_TestFixture : public CFBTestFixtureBase{
+      E_CTD_TestFixture() : CFBTestFixtureBase("iec61499::events::E_CTD"_STRID) {
+        setInputData({&mInPV});
+        setOutputData({&mOutQ, &mOutCV});
+        setup();
+      }
 
-    E_CTD_TestFixture() : CFBTestFixtureBase(g_nStringIdE_CTD){
-      SETUP_INPUTDATA(&mInPV);
-      SETUP_OUTPUTDATA(&mOutQ, &mOutCV);
-      CFBTestFixtureBase::setup();
-    }
+      CIEC_UINT mInPV; // Preset value
+      CIEC_BOOL mOutQ; // CV < 0
+      CIEC_UINT mOutCV; // count value
 
-    CIEC_UINT mInPV; //Preset value
-    CIEC_BOOL mOutQ; //CV < 0
-    CIEC_UINT mOutCV; //count value
+      bool checkCD(TForteUInt16 pa_prevCV) {
+        if (pa_prevCV < 1) {
+          // no algorithm should have been executed
+          if (func_OR(func_NE(mOutCV, CIEC_UINT(pa_prevCV)),
+                      func_OR(func_NOT(mOutQ), func_NOT(CIEC_BOOL(eventChainEmpty()))))) {
+            return false;
+          }
+        } else {
+          if (func_NE(CIEC_UINT(pa_prevCV - 1), mOutCV)) {
+            return false;
+          } else if (func_NE(mOutQ, func_LT(mOutCV, CIEC_UINT(1)))) {
+            return false;
+          } else if (!checkForSingleOutputEventOccurence(0)) {
+            return false;
+          }
+        }
+        return true;
+      }
 
-    bool checkCD(TForteUInt16 pa_prevCV){
-      if(pa_prevCV < 1){
-        //no algorithm should have been executed
-        if(mOutCV != pa_prevCV || !mOutQ || !eventChainEmpty()){
+      bool checkLD(TForteUInt16 pa_usedPV) {
+        if (func_OR(func_NE(CIEC_UINT(pa_usedPV), mInPV),
+                    func_OR(func_NE(mInPV, mOutCV), func_NE(CIEC_BOOL(pa_usedPV < 1), mOutQ)))) {
           return false;
         }
-      }
-      else{
-        if(((pa_prevCV - 1) != mOutCV)){
-          return false;
-        } else if(mOutQ != (mOutCV < 1)){
-          return false;
-        } else if(!checkForSingleOutputEventOccurence(0)){
+        if (!checkForSingleOutputEventOccurence(1)) {
           return false;
         }
+        return true;
       }
-      return true;
-    }
+  };
 
-    bool checkLD(TForteUInt16 pa_usedPV){
-      if(pa_usedPV != mInPV || mInPV != mOutCV || ((pa_usedPV < 1) != (true == mOutQ))){
-        return false;
-      }
-      if(!checkForSingleOutputEventOccurence(1)){
-        return false;
-      }
-      return true;
-    }
-};
+  BOOST_FIXTURE_TEST_SUITE(CTDTests, E_CTD_TestFixture)
 
-BOOST_FIXTURE_TEST_SUITE( CTDTests, E_CTD_TestFixture)
-
-  BOOST_AUTO_TEST_CASE(EventCD){
+  BOOST_AUTO_TEST_CASE(EventCD) {
     unsigned int numberOfTries = 100;
-    TForteUInt16 valuesToTest[] = { 10, 1, 0, 65534, 65535 };
+    TForteUInt16 valuesToTest[] = {10, 1, 0, 65534, 65535};
     unsigned int numberOfValues = static_cast<unsigned int>(sizeof(valuesToTest) / sizeof(TForteUInt16));
-    for(unsigned int i = 0; i < numberOfValues; i++){
-      for(unsigned int j = 0; j < numberOfTries; j++){
-        mInPV = valuesToTest[i];
+    for (unsigned int i = 0; i < numberOfValues; i++) {
+      for (unsigned int j = 0; j < numberOfTries; j++) {
+        mInPV = CIEC_UINT(valuesToTest[i]);
         triggerEvent(1);
         checkForSingleOutputEventOccurence(1);
-        //Send event
+        // Send event
         triggerEvent(0);
         BOOST_CHECK(checkCD(valuesToTest[i]));
       }
     }
   }
 
-  BOOST_AUTO_TEST_CASE(EventLD){
+  BOOST_AUTO_TEST_CASE(EventLD) {
     unsigned int numberOfTries = 100;
-    TForteUInt16 PVToTest[] = { 10, 1, 0, 65534, 65535 };
+    TForteUInt16 PVToTest[] = {10, 1, 0, 65534, 65535};
     unsigned int numberOftest = static_cast<unsigned int>(sizeof(PVToTest) / sizeof(TForteUInt16));
-    for(unsigned int i = 0; i < numberOftest; ++i){
-      for(unsigned int j = 0; j < numberOfTries; j++){
-        mInPV = PVToTest[i];
+    for (unsigned int i = 0; i < numberOftest; ++i) {
+      for (unsigned int j = 0; j < numberOfTries; j++) {
+        mInPV = CIEC_UINT(PVToTest[i]);
         triggerEvent(1);
         BOOST_CHECK(checkLD(PVToTest[i]));
       }
     }
   }
 
-  BOOST_AUTO_TEST_CASE(Mix){
+  BOOST_AUTO_TEST_CASE(Mix) {
     unsigned int numberOfTries = 100;
-    for(unsigned int i = 0; i < numberOfTries; i++){
-      mInPV = 0;
+    for (unsigned int i = 0; i < numberOfTries; i++) {
+      mInPV = CIEC_UINT(0);
       triggerEvent(1);
       BOOST_CHECK(checkLD(0));
       triggerEvent(0);
       BOOST_CHECK(checkCD(0));
 
-      mInPV = 1;
+      mInPV = CIEC_UINT(1);
       triggerEvent(0);
       BOOST_CHECK(checkCD(0));
       triggerEvent(1);
@@ -121,7 +121,7 @@ BOOST_FIXTURE_TEST_SUITE( CTDTests, E_CTD_TestFixture)
       triggerEvent(0);
       BOOST_CHECK(checkCD(0));
 
-      mInPV = 65535;
+      mInPV = CIEC_UINT(65535);
       triggerEvent(1);
       BOOST_CHECK(checkLD(65535));
       triggerEvent(0);
@@ -141,4 +141,5 @@ BOOST_FIXTURE_TEST_SUITE( CTDTests, E_CTD_TestFixture)
     }
   }
 
-BOOST_AUTO_TEST_SUITE_END()
+  BOOST_AUTO_TEST_SUITE_END()
+} // namespace forte::iec61499::events::test

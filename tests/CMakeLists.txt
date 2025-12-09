@@ -1,5 +1,5 @@
 #*******************************************************************************
-# Copyright (c) 2011 - 2018 ACIN, nxtControl, Profactor GmbH, fortiss GmbH
+# Copyright (c) 2011 - 2024 ACIN, nxtControl, Profactor GmbH, fortiss GmbH, Jose Cabral
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # http://www.eclipse.org/legal/epl-2.0.
@@ -12,7 +12,16 @@
 # *   Martin Melik-Merkumians  - adds subdirectory for arch tests
 # *******************************************************************************/
 
-SET(SOURCE_GROUP ${SOURCE_GROUP}\\tests)
+if (NOT FORTE_TESTS)
+  return()
+endif()
+
+if (FORTE_ARCHITECTURE STREQUAL "Posix")
+  option(FORTE_TEST_CODE_COVERAGE_ANALYSIS "Perform code coverage analyis with GCOV and presentation with LCOV" OFF)
+  mark_as_advanced(FORTE_TEST_CODE_COVERAGE_ANALYSIS)
+  option(FORTE_TEST_SANITIZE "Perform address sanitizer analysis" OFF)
+endif()
+
 
 #######################################################################################
 # functions for test generation
@@ -55,6 +64,12 @@ FUNCTION(forte_test_add_inc_system_directories)
   ENDFOREACH(ARG)
 ENDFUNCTION(forte_test_add_inc_system_directories)
 
+FUNCTION(forte_test_add_link_library)
+  FOREACH(ARG ${ARGV})
+    SET_PROPERTY(GLOBAL APPEND PROPERTY FORTE_TEST_LIBRARIES ${ARG})
+  ENDFOREACH(ARG)
+ENDFUNCTION(forte_test_add_link_library)
+
 #######################################################################################
 # add subdirectories
 #######################################################################################
@@ -70,17 +85,8 @@ forte_test_add_subdirectory(stdfblib)
 # set library path
 #######################################################################################
 forte_test_add_link_directories(${FORTE_TESTS_LINK_DIRS})
-forte_test_add_link_directories(${CMAKE_BINARY_DIR}/src)
 
-get_property(LINK_DIRECTORIES GLOBAL PROPERTY FORTE_LINK_DIRECTORIES)
-GET_PROPERTY(FORTE_TEST_LINK_DIR GLOBAL PROPERTY FORTE_TEST_LINK_DIRECTORIES)
-
-LIST(APPEND LINK_DIRECTORIES ${FORTE_TEST_LINK_DIR})
-
-LIST(LENGTH LINK_DIRECTORIES len)
-IF(len GREATER 0)
-  LIST(REMOVE_DUPLICATES LINK_DIRECTORIES)
-ENDIF(len GREATER 0)
+GET_PROPERTY(LINK_DIRECTORIES GLOBAL PROPERTY FORTE_TEST_LINK_DIRECTORIES)
 LINK_DIRECTORIES(${LINK_DIRECTORIES})
 
 #######################################################################################
@@ -99,67 +105,44 @@ SET(WRITE_FILE "")
 FOREACH(FILE ${SOURCE_CPP} ${SOURCE_H})
   SET(WRITE_FILE "${WRITE_FILE}${FILE}\n")
 ENDFOREACH(FILE)
-FILE(WRITE ${CMAKE_BINARY_DIR}/file_test_list.txt "${WRITE_FILE}")
+FILE(WRITE ${CMAKE_CURRENT_BINARY_DIR}/file_test_list.txt "${WRITE_FILE}")
   
 #######################################################################################
 # Create Exe File
 #######################################################################################
 
-ADD_EXECUTABLE(forte_test $<TARGET_OBJECTS:FORTE_LITE> ${SOURCE_H} ${SOURCE_CPP})
+ADD_EXECUTABLE(forte_test ${SOURCE_H} ${SOURCE_CPP})
+get_property(forte_libs TARGET forte PROPERTY LINK_LIBRARIES)
+target_link_libraries(forte_test ${forte_libs})
+target_compile_features(forte_test PUBLIC cxx_std_20)
+
+target_include_directories(forte_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 
 #######################################################################################
 # Add definitions
 #######################################################################################
 
-GET_PROPERTY(DEFINITION GLOBAL PROPERTY FORTE_DEFINITION)
-add_definitions(${DEFINITION}) #using target_compile_definitions put the definitions at the beginning giving problems sometimes because cmake adds -O3.
-
-if("${FORTE_ARCHITECTURE}" STREQUAL "Posix")
- ADD_DEFINITIONS (-DBOOST_TEST_DYN_LINK)
-endif("${FORTE_ARCHITECTURE}" STREQUAL "Posix")
-
 if("${FORTE_ARCHITECTURE}" STREQUAL "Win32")
  ADD_DEFINITIONS (-DBOOST_TEST_NO_LIB)
+ if(MINGW)
+  #force MINGW to statically link libc and lib stdc++ so that no mingw dlls are needed for forte_test.exe
+  TARGET_LINK_OPTIONS(forte_test PRIVATE -static-libgcc -static-libstdc++)
+ endif()
 endif("${FORTE_ARCHITECTURE}" STREQUAL "Win32")
 
-add_dependencies(forte_test FORTE_LITE)
-add_dependencies(forte_test forte_stringlist_generator)
-
 SET_TARGET_PROPERTIES(forte_test PROPERTIES LINKER_LANGUAGE CXX)
-
-get_target_property(existing_link_flags_test forte_test LINK_FLAGS)
-if(existing_link_flags_test)
-  set_property(GLOBAL APPEND PROPERTY FORTE_TEST_LINK_FLAGS ${existing_link_flags_test})
-endif()
-
-GET_PROPERTY(link_flags_test GLOBAL PROPERTY FORTE_TEST_LINK_FLAGS)
 
 #add forte_test to the list of test to be executed by ctest
 add_test(forte_test ${EXECUTABLE_OUTPUT_PATH}/forte_test)
 
+set_tests_properties(forte_test PROPERTIES TIMEOUT 300)
+
 if("${FORTE_ARCHITECTURE}" STREQUAL "Posix")
-  set(FORTE_TEST_CODE_COVERAGE_ANALYSIS OFF CACHE BOOL "Perform code coverage analyis with GCOV and presentation with LCOV")
-  mark_as_advanced(FORTE_TEST_CODE_COVERAGE_ANALYSIS)
   if(FORTE_TEST_CODE_COVERAGE_ANALYSIS)
-      INCLUDE(${FORTE_BUILDSUPPORT_DIRECTORY}/GCov.cmake)    
+      INCLUDE(GCov.cmake)    
       SETUP_GCOV(TestCoverage ctest coverage)
   endif() 
 endif()
-
-#######################################################################################
-# Generate stringlist for every source file
-#######################################################################################
-if(FORTE_LINKED_STRINGDICT)
-  set(ENABLE_GENERATED_SOURCE_CPP ON)
-  ADD_DEPENDENCIES (forte_test forte_stringlist_externals)
-endif(FORTE_LINKED_STRINGDICT)
-
-#######################################################################################
-# Enable autogenerated source files
-#######################################################################################
-if(ENABLE_GENERATED_SOURCE_CPP)
-   target_compile_definitions(forte_test PUBLIC "-DFORTE_ENABLE_GENERATED_SOURCE_CPP")
-endif(ENABLE_GENERATED_SOURCE_CPP)
 
 #######################################################################################
 # add includes
@@ -167,16 +150,8 @@ endif(ENABLE_GENERATED_SOURCE_CPP)
 forte_test_add_inc_system_directories(${FORTE_TESTS_INC_DIRS})
 forte_test_add_inc_system_directories(./)
 
-GET_PROPERTY(INCLUDE_DIRECTORIES GLOBAL PROPERTY FORTE_INCLUDE_DIRECTORIES)
 GET_PROPERTY(FORTE_TEST_INC GLOBAL PROPERTY FORTE_TEST_INC_DIRECTORIES)
-
-LIST(APPEND INCLUDE_DIRECTORIES ${FORTE_TEST_INC})
-
-LIST(LENGTH INCLUDE_DIRECTORIES len)
-IF(len GREATER 0)
-  LIST(REMOVE_DUPLICATES INCLUDE_DIRECTORIES)
-  LIST(REVERSE INCLUDE_DIRECTORIES) # bugfix, for replaced include files
-ENDIF(len GREATER 0)
+target_include_directories(forte_test PUBLIC ${FORTE_TEST_INC})
 
 GET_PROPERTY(INCLUDE_SYSTEM_DIRECTORIES GLOBAL PROPERTY FORTE_INCLUDE_SYSTEM_DIRECTORIES)
 GET_PROPERTY(INCLUDE_TEST_SYSTEM_DIRECTORIES GLOBAL PROPERTY FORTE_TEST_INC_SYSTEM_DIRECTORIES)
@@ -188,19 +163,12 @@ IF(len GREATER 0)
   LIST(REVERSE INCLUDE_TEST_SYSTEM_DIRECTORIES) # bugfix, for replaced include files
 ENDIF(len GREATER 0)
 
-target_include_directories(forte_test PUBLIC ${INCLUDE_DIRECTORIES})
 INCLUDE_DIRECTORIES(SYSTEM ${INCLUDE_TEST_SYSTEM_DIRECTORIES})
 
 #######################################################################################
-# Link Libraries to the Executeable
+# Link Libraries to the Executable
 #######################################################################################
 
 #Link flags
-get_property(LINK_TEST_LIBRARY GLOBAL PROPERTY FORTE_LINK_LIBRARY)
-
-if("${FORTE_ARCHITECTURE}" STREQUAL "Posix")
-    SET_PROPERTY(GLOBAL APPEND PROPERTY LINK_TEST_LIBRARY "-lboost_unit_test_framework -lboost_prg_exec_monitor -lboost_test_exec_monitor")
-endif("${FORTE_ARCHITECTURE}" STREQUAL "Posix")
-
-TARGET_LINK_LIBRARIES(forte_test ${LINK_TEST_LIBRARY})
-
+get_property(LINK_TEST_LIBRARY GLOBAL PROPERTY FORTE_TEST_LIBRARIES)
+target_link_libraries(forte_test ${LINK_TEST_LIBRARY})

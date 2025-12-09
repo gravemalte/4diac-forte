@@ -12,34 +12,34 @@
  *   Alois Zoitl - migrated fb tests to boost test infrastructure
  *******************************************************************************/
 #include "../../core/fbtests/fbtestfixture.h"
+#include "forte/datatypes/forte_bool.h"
 
-#ifdef FORTE_ENABLE_GENERATED_SOURCE_CPP
-#include "E_PERMIT_tester_gen.cpp"
-#endif
+using namespace forte::literals;
 
-struct E_PERMIT_TestFixture : public CFBTestFixtureBase{
+namespace forte::iec61499::events::test {
+  struct E_PERMIT_TestFixture : public forte::test::CFBTestFixtureBase {
 
-    E_PERMIT_TestFixture() : CFBTestFixtureBase(g_nStringIdE_PERMIT){
-      SETUP_INPUTDATA(&mInPERMIT);
-      CFBTestFixtureBase::setup();
-    }
- 
-    CIEC_BOOL mInPERMIT; //DATA INPUT
-};
+      E_PERMIT_TestFixture() : CFBTestFixtureBase("iec61499::events::E_PERMIT"_STRID) {
+        setInputData({&mInPERMIT});
+        setup();
+      }
 
+      CIEC_BOOL mInPERMIT; // DATA INPUT
+  };
 
-BOOST_FIXTURE_TEST_SUITE( PermitTests, E_PERMIT_TestFixture)
+  BOOST_FIXTURE_TEST_SUITE(PermitTests, E_PERMIT_TestFixture)
 
-  BOOST_AUTO_TEST_CASE(permit){
-    mInPERMIT = true;
+  BOOST_AUTO_TEST_CASE(permit) {
+    mInPERMIT = true_BOOL;
     triggerEvent(0);
     BOOST_CHECK(checkForSingleOutputEventOccurence(0));
   }
 
-  BOOST_AUTO_TEST_CASE(dontPermit){
-    mInPERMIT = false;
+  BOOST_AUTO_TEST_CASE(dontPermit) {
+    mInPERMIT = false_BOOL;
     triggerEvent(0);
     BOOST_CHECK(eventChainEmpty());
   }
 
-BOOST_AUTO_TEST_SUITE_END()
+  BOOST_AUTO_TEST_SUITE_END()
+} // namespace forte::iec61499::events::test

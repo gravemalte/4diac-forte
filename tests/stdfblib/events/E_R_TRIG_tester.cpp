@@ -12,55 +12,55 @@
  *   Alois Zoitl - migrated fb tests to boost test infrastructure
  *******************************************************************************/
 #include "../../core/fbtests/fbtestfixture.h"
+#include "forte/datatypes/forte_bool.h"
 
-#ifdef FORTE_ENABLE_GENERATED_SOURCE_CPP
-#include "E_R_TRIG_tester_gen.cpp"
-#endif
+using namespace forte::literals;
 
-struct E_R_TRIG_TestFixture : public CFBTestFixtureBase{
+namespace forte::iec61499::events::test {
+  struct E_R_TRIG_TestFixture : public forte::test::CFBTestFixtureBase {
 
-    E_R_TRIG_TestFixture() : CFBTestFixtureBase(g_nStringIdE_R_TRIG){
-      SETUP_INPUTDATA(&mInQI);
-      CFBTestFixtureBase::setup();
-    }
+      E_R_TRIG_TestFixture() : CFBTestFixtureBase("iec61499::events::E_R_TRIG"_STRID) {
+        setInputData({&mInQI});
+        setup();
+      }
 
-    CIEC_BOOL mInQI; //DATA INPUT
-};
+      CIEC_BOOL mInQI; // DATA INPUT
+  };
 
+  BOOST_FIXTURE_TEST_SUITE(RTrigTests, E_R_TRIG_TestFixture)
 
-BOOST_FIXTURE_TEST_SUITE( RTrigTests, E_R_TRIG_TestFixture)
-
-  BOOST_AUTO_TEST_CASE(RaisingEdge){
-    mInQI = true;
+  BOOST_AUTO_TEST_CASE(RaisingEdge) {
+    mInQI = true_BOOL;
     triggerEvent(0);
     BOOST_CHECK(checkForSingleOutputEventOccurence(0));
   }
 
-  BOOST_AUTO_TEST_CASE(FallingEdge){
-    mInQI = true;
+  BOOST_AUTO_TEST_CASE(FallingEdge) {
+    mInQI = true_BOOL;
     triggerEvent(0);
     clearEventChain();
-    mInQI = false;
+    mInQI = false_BOOL;
     triggerEvent(0);
     BOOST_CHECK(eventChainEmpty());
   }
 
-  BOOST_AUTO_TEST_CASE(StableHigh){
-    mInQI = true;
+  BOOST_AUTO_TEST_CASE(StableHigh) {
+    mInQI = true_BOOL;
     triggerEvent(0);
     pullFirstChainEventID();
-    for(unsigned int i = 0; i < 1000; i++){
+    for (unsigned int i = 0; i < 1000; i++) {
       triggerEvent(0);
       BOOST_CHECK(eventChainEmpty());
     }
   }
 
-  BOOST_AUTO_TEST_CASE(StableLow){
-    mInQI = false;
-    for(unsigned int i = 0; i < 1000; i++){
+  BOOST_AUTO_TEST_CASE(StableLow) {
+    mInQI = false_BOOL;
+    for (unsigned int i = 0; i < 1000; i++) {
       triggerEvent(0);
       BOOST_CHECK(eventChainEmpty());
     }
   }
 
-BOOST_AUTO_TEST_SUITE_END()
+  BOOST_AUTO_TEST_SUITE_END()
+} // namespace forte::iec61499::events::test

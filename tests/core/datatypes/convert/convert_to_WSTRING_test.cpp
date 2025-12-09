@@ -10,221 +10,201 @@
  *   Matthias Plasch - initial API and implementation and/or initial documentation
  *******************************************************************************/
 #include <boost/test/unit_test.hpp>
+#include "forte_boost_output_support.h"
 
-#include "convert_functions.h"
-#include "../../../src/core/datatypes/forte_wstring.h"
+#include "forte/datatypes/convert/convert_functions.h"
+#include "forte/datatypes/forte_wstring.h"
 
-//BOOLEAN
-#include "../../../src/core/datatypes/forte_bool.h"
-//BIT-Datatypes
-#include "../../../src/core/datatypes/forte_byte.h"
-#include "../../../src/core/datatypes/forte_word.h"
-#include "../../../src/core/datatypes/forte_dword.h"
-//INT-Datatypes
-#include "../../../src/core/datatypes/forte_sint.h"
-#include "../../../src/core/datatypes/forte_usint.h"
-#include "../../../src/core/datatypes/forte_int.h"
-#include "../../../src/core/datatypes/forte_uint.h"
-#include "../../../src/core/datatypes/forte_dint.h"
-#include "../../../src/core/datatypes/forte_udint.h"
-//Time
-#include "../../../src/core/datatypes/forte_time.h"
+// BOOLEAN
+#include "forte/datatypes/forte_bool.h"
+// BIT-Datatypes
+#include "forte/datatypes/forte_byte.h"
+#include "forte/datatypes/forte_word.h"
+#include "forte/datatypes/forte_dword.h"
+// INT-Datatypes
+#include "forte/datatypes/forte_sint.h"
+#include "forte/datatypes/forte_usint.h"
+#include "forte/datatypes/forte_int.h"
+#include "forte/datatypes/forte_uint.h"
+#include "forte/datatypes/forte_dint.h"
+#include "forte/datatypes/forte_udint.h"
+// Time
+#include "forte/datatypes/forte_time.h"
 
-#ifdef FORTE_USE_REAL_DATATYPE
-  #include <boost/test/floating_point_comparison.hpp>
+#include "forte/datatypes/forte_lword.h"
+#include "forte/datatypes/forte_lint.h"
+#include "forte/datatypes/forte_ulint.h"
 
-  #include "../../../src/core/datatypes/forte_real.h"
-#endif //FORTE_USE_REAL_DATATYPE
+#include <boost/test/tools/floating_point_comparison.hpp>
+#include "forte/datatypes/forte_real.h"
+#include "forte/datatypes/forte_lreal.h"
 
-#ifdef FORTE_USE_64BIT_DATATYPES
-  #include "../../../src/core/datatypes/forte_lword.h"
-  #include "../../../src/core/datatypes/forte_lint.h"
-  #include "../../../src/core/datatypes/forte_ulint.h"
+namespace forte::test {
+  BOOST_AUTO_TEST_SUITE(Datatypes_to_WSTRING_conversion_test)
 
-#ifdef FORTE_USE_REAL_DATATYPE
-  #include "../../../src/core/datatypes/forte_lreal.h"
-#endif //FORTE_USE_REAL_DATATYPE
-#endif //FORTE_USE_64BIT_DATATYPES
+  BOOST_AUTO_TEST_CASE(BOOLS_AND_BITS_to_WSTRING_test) {
+    CIEC_WSTRING sTest;
+    CIEC_WSTRING sResult;
+    // check BOOL
+    CIEC_BOOL bTest(true);
+    sResult = CIEC_WSTRING("TRUE");
+    sTest = func_BOOL_AS_WSTRING(bTest);
+    // check result value
+    BOOST_CHECK(sTest == sResult);
+    // check length value
+    BOOST_CHECK_EQUAL(sTest.length(), 4);
 
-BOOST_AUTO_TEST_SUITE(Datatypes_to_WSTRING_conversion_test)
+    // check WORD
+    CIEC_WORD nWTest(0xffff);
+    sResult = CIEC_WSTRING("65535");
+    sTest = func_WORD_AS_WSTRING(nWTest);
+    // check result value
+    BOOST_CHECK(sTest == sResult);
+    // check length value
+    BOOST_CHECK_EQUAL(sTest.length(), 5);
 
-BOOST_AUTO_TEST_CASE(BOOLS_AND_BITS_to_WSTRING_test)
-{
-  CIEC_WSTRING sTest;
-  CIEC_WSTRING sResult;
-  //check BOOL
-  CIEC_BOOL bTest = true;
-  sResult = "TRUE";
-  sTest = BOOL_TO_WSTRING(bTest);
-  //check result value
-  BOOST_CHECK(sTest == sResult);
-  //check length value
-  BOOST_CHECK_EQUAL(sTest.length(), 4);
+    // check DWORD 4294967295
+    CIEC_DWORD nDWTest(0xffffffff);
+    sResult = CIEC_WSTRING("4294967295");
+    sTest = func_DWORD_AS_WSTRING(nDWTest);
+    // check result value
+    BOOST_CHECK(sTest == sResult);
+    // check length value
+    BOOST_CHECK_EQUAL(sTest.length(), 10);
 
-  //check WORD
-  CIEC_WORD nWTest = 0xffff;
-  sResult = "65535";
-  sTest = WORD_TO_WSTRING(nWTest);
-  //check result value
-  BOOST_CHECK(sTest == sResult);
-  //check length value
-  BOOST_CHECK_EQUAL(sTest.length(), 5);
+    // check BYTE 255U
+    CIEC_BYTE nBTest(255U);
+    sResult = CIEC_WSTRING("255");
+    sTest = func_BYTE_AS_WSTRING(nBTest);
+    // check result value
+    BOOST_CHECK(sTest == sResult);
+    // check length value
+    BOOST_CHECK_EQUAL(sTest.length(), 3);
 
-  //check DWORD 4294967295
-  CIEC_DWORD nDWTest = 0xffffffff;
-  sResult = "4294967295";
-  sTest = DWORD_TO_WSTRING(nDWTest);
-  //check result value
-  BOOST_CHECK(sTest == sResult);
-  //check length value
-  BOOST_CHECK_EQUAL(sTest.length(), 10);
+    // check LWORD 255U
+    CIEC_LWORD nLWTest(18446744073709551615ULL);
+    sResult = CIEC_WSTRING("18446744073709551615");
+    sTest = func_LWORD_AS_WSTRING(nLWTest);
+    // check result value
+    BOOST_TEST(sTest == sResult);
+    // check length value
+    BOOST_CHECK_EQUAL(sTest.length(), 20);
+  }
 
-  //check BYTE 255U
-  CIEC_BYTE nBTest; 
-  nBTest= 255U;
-  sResult = "255";
-  sTest = BYTE_TO_WSTRING(nBTest);
-  //check result value
-  BOOST_CHECK(sTest == sResult);
-  //check length value
-  BOOST_CHECK_EQUAL(sTest.length(), 3);
+  BOOST_AUTO_TEST_CASE(INTEGERS_to_WSTRING_test) {
+    CIEC_WSTRING sTest;
+    CIEC_WSTRING sResult;
 
-#ifdef FORTE_USE_64BIT_DATATYPES
-  //check LWORD 255U
-  CIEC_LWORD nLWTest; 
-  nLWTest= 18446744073709551615ULL;
-  sResult = "18446744073709551615";
-  sTest = LWORD_TO_WSTRING(nLWTest);
-  //check result value
-  BOOST_CHECK(sTest == sResult);
-  //check length value
-  BOOST_CHECK_EQUAL(sTest.length(), 20);
-#endif //FORTE_USE_64BIT_DATATYPES
-}
+    // check SINT
+    CIEC_SINT nSTest(127);
+    sResult = CIEC_WSTRING("127");
+    sTest = func_SINT_AS_WSTRING(nSTest);
+    // check result value
+    BOOST_CHECK(sTest == sResult);
+    // check length value
+    BOOST_CHECK_EQUAL(sTest.length(), 3);
 
-BOOST_AUTO_TEST_CASE(INTEGERS_to_WSTRING_test)
-{
-  CIEC_WSTRING sTest;
-  CIEC_WSTRING sResult;
+    // check USINT
+    CIEC_USINT nUSTest(255);
+    sResult = CIEC_WSTRING("255");
+    sTest = func_USINT_AS_WSTRING(nUSTest);
+    // check result value
+    BOOST_CHECK(sTest == sResult);
+    // check length value
+    BOOST_CHECK_EQUAL(sTest.length(), 3);
 
-  //check SINT
-  CIEC_SINT nSTest = 127;
-  sResult = "127";
-  sTest = SINT_TO_WSTRING(nSTest);
-  //check result value
-  BOOST_CHECK(sTest == sResult);
-  //check length value
-  BOOST_CHECK_EQUAL(sTest.length(), 3);
+    // check INT
+    CIEC_INT nITest(32767);
+    sResult = CIEC_WSTRING("32767");
+    sTest = func_INT_AS_WSTRING(nITest);
+    // check result value
+    BOOST_CHECK(sTest == sResult);
+    // check length value
+    BOOST_CHECK_EQUAL(sTest.length(), 5);
 
-  //check USINT
-  CIEC_USINT nUSTest = 255;
-  sResult = "255";
-  sTest = USINT_TO_WSTRING(nUSTest);
-  //check result value
-  BOOST_CHECK(sTest == sResult);
-  //check length value
-  BOOST_CHECK_EQUAL(sTest.length(), 3);
+    // check UINT
+    CIEC_UINT nUITest(65535);
+    sResult = CIEC_WSTRING("65535");
+    sTest = func_UINT_AS_WSTRING(nUITest);
+    // check result value
+    BOOST_CHECK(sTest == sResult);
+    // check length value
+    BOOST_CHECK_EQUAL(sTest.length(), 5);
 
-  //check INT
-  CIEC_INT nITest = 32767;
-  sResult = "32767";
-  sTest = INT_TO_WSTRING(nITest);
-  //check result value
-  BOOST_CHECK(sTest == sResult);
-  //check length value
-  BOOST_CHECK_EQUAL(sTest.length(), 5);
+    // check DINT
+    CIEC_DINT nDITest(2147483647);
+    sResult = CIEC_WSTRING("2147483647");
+    sTest = func_DINT_AS_WSTRING(nDITest);
+    // check result value
+    BOOST_CHECK(sTest == sResult);
+    // check length value
+    BOOST_CHECK_EQUAL(sTest.length(), 10);
 
-  //check UINT
-  CIEC_UINT nUITest = 65535;
-  sResult = "65535";
-  sTest = UINT_TO_WSTRING(nUITest);
-  //check result value
-  BOOST_CHECK(sTest == sResult);
-  //check length value
-  BOOST_CHECK_EQUAL(sTest.length(), 5);
+    // check UDINT
+    CIEC_UDINT nUDITest(4294967295ULL);
+    sResult = CIEC_WSTRING("4294967295");
+    sTest = func_UDINT_AS_WSTRING(nUDITest);
+    // check result value
+    BOOST_CHECK(sTest == sResult);
+    // check length value
+    BOOST_CHECK_EQUAL(sTest.length(), 10);
 
-  //check DINT
-  CIEC_DINT nDITest = 2147483647;
-  sResult = "2147483647";
-  sTest = DINT_TO_WSTRING(nDITest);
-  //check result value
-  BOOST_CHECK(sTest == sResult);
-  //check length value
-  BOOST_CHECK_EQUAL(sTest.length(), 10);
+    // check LINT
+    CIEC_LINT nLITest(9223372036854775807LL);
+    sResult = CIEC_WSTRING("9223372036854775807");
+    sTest = func_LINT_AS_WSTRING(nLITest);
+    // check result value
+    BOOST_CHECK(sTest == sResult);
+    // check length value
+    BOOST_CHECK_EQUAL(sTest.length(), 19);
 
-  //check UDINT
-  CIEC_UDINT nUDITest = 4294967295ULL;
-  sResult = "4294967295";
-  sTest = UDINT_TO_WSTRING(nUDITest);
-  //check result value
-  BOOST_CHECK(sTest == sResult);
-  //check length value
-  BOOST_CHECK_EQUAL(sTest.length(), 10);
+    // check ULINT
+    CIEC_ULINT nULITest(18446744073709551615ULL);
+    sResult = CIEC_WSTRING("18446744073709551615");
+    sTest = func_ULINT_AS_WSTRING(nULITest);
+    // check result value
+    BOOST_CHECK(sTest == sResult);
+    // check length value
+    BOOST_CHECK_EQUAL(sTest.length(), 20);
+  }
 
-#ifdef FORTE_USE_64BIT_DATATYPES
-  //check LINT
-  CIEC_LINT nLITest; 
-  nLITest= 9223372036854775807LL;
-  sResult = "9223372036854775807";
-  sTest = LINT_TO_WSTRING(nLITest);
-  //check result value
-  BOOST_CHECK(sTest == sResult);
-  //check length value
-  BOOST_CHECK_EQUAL(sTest.length(), 19);
+  BOOST_AUTO_TEST_CASE(TIME_to_WSTRING_test) {
+    CIEC_WSTRING sTest;
+    CIEC_WSTRING sResult;
 
-  //check ULINT
-  CIEC_ULINT nULITest; 
-  nULITest= 18446744073709551615ULL;
-  sResult = "18446744073709551615";
-  sTest = ULINT_TO_WSTRING(nULITest);
-  //check result value
-  BOOST_CHECK(sTest == sResult);
-  //check length value
-  BOOST_CHECK_EQUAL(sTest.length(), 20);
-#endif //FORTE_USE_64BIT_DATATYPES
-}
+    // check TIME
+    CIEC_TIME tTest;
+    tTest.fromString("T#3000ms");
+    sResult = CIEC_WSTRING("T#3s");
+    sTest = func_TIME_AS_WSTRING(tTest);
+    // check result value
+    BOOST_CHECK(sTest == sResult);
+    // check length value
+    BOOST_CHECK_EQUAL(sTest.length(), 4);
+  }
 
-BOOST_AUTO_TEST_CASE(TIME_to_WSTRING_test)
-{
-  CIEC_WSTRING sTest;
-  CIEC_WSTRING sResult;
-  
-  //check TIME
-  CIEC_TIME tTest = "T#3000ms";
-  sResult = "T#3000ms";
-  sTest = TIME_TO_WSTRING(tTest);
-  //check result value
-  BOOST_CHECK(sTest == sResult);
-  //check length value
-  BOOST_CHECK_EQUAL(sTest.length(), 8);
-}
+  BOOST_AUTO_TEST_CASE(REAL_to_WSTRING_test) {
+    CIEC_WSTRING sTest;
+    CIEC_WSTRING sResult;
 
-#ifdef FORTE_USE_REAL_DATATYPE
-BOOST_AUTO_TEST_CASE(REAL_to_WSTRING_test)
-{
-  CIEC_WSTRING sTest;
-  CIEC_WSTRING sResult;
-  
-  //check REAL
-  CIEC_REAL nRTest = 1.46e-3f;
-  sResult = "0.00146";
-  sTest = REAL_TO_WSTRING(nRTest);
-  //check result value
-  BOOST_CHECK(sTest == sResult);
-  //check length value
-  BOOST_CHECK_EQUAL(sTest.length(), 7);
+    // check REAL
+    CIEC_REAL nRTest(1.46e-3f);
+    sResult = CIEC_WSTRING("0.00146000006");
+    sTest = func_REAL_AS_WSTRING(nRTest);
+    // check result value
+    BOOST_TEST(sTest == sResult);
+    // check length value
+    BOOST_TEST(sTest.length() == 13);
 
-#ifdef FORTE_USE_64BIT_DATATYPES
-  //check LREAL
-  CIEC_LREAL nLRTest = -2.2874e6;
-  sResult = "-2287400";
-  sTest = LREAL_TO_WSTRING(nLRTest);
-  //check result value
-  BOOST_CHECK(sTest == sResult);
-  //check length value
-  BOOST_CHECK_EQUAL(sTest.length(), 8);
-#endif //FORTE_USE_64BIT_DATATYPES
-}
-#endif //FORTE_USE_REAL_DATATYPE
+    // check LREAL
+    CIEC_LREAL nLRTest(-2.2874e6);
+    sResult = CIEC_WSTRING("-2287400.0");
+    sTest = func_LREAL_AS_WSTRING(nLRTest);
+    // check result value
+    BOOST_TEST(sTest == sResult);
+    // check length value
+    BOOST_TEST(sTest.length() == 10);
+  }
 
-BOOST_AUTO_TEST_SUITE_END()
+  BOOST_AUTO_TEST_SUITE_END()
+} // namespace forte::test

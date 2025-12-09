@@ -11,248 +11,245 @@
  *******************************************************************************/
 #include <boost/test/unit_test.hpp>
 
-#include "../../../src/com/HTTP/httpparser.h"
+#include "../../../com/HTTP/httpparser.h"
 
-BOOST_AUTO_TEST_SUITE (HTTPParser_function_test)
+using namespace std::string_literals;
+
+namespace forte::com_infra::http::test {
+  BOOST_AUTO_TEST_SUITE(HTTPParser_function_test)
 
   BOOST_AUTO_TEST_CASE(createGetRequest_test) {
+    std::string dest = "random text"s;
+    std::string host = "0.0.0.0"s;
+    short unsigned int port = 80;
+    std::string path = "/"s;
+    std::string auth = ""s;
+    std::string params = ""s;
 
-    const char* resultValid1 = "GET / HTTP/1.1\r\nHost: 0.0.0.0\r\n\r\n";
-    const char* resultValid2 = "GET / HTTP/1.1\r\nHost: 192.168.0.1\r\n\r\n";
-    const char* resultValid3 = "GET /lookFor HTTP/1.1\r\nHost: 192.168.0.1\r\n\r\n";
-    const char* resultValid4 = "GET /lookFor/something/else HTTP/1.1\r\nHost: 192.168.0.1\r\n\r\n";
+    const char *resultValid1 = "GET / HTTP/1.1\r\nHost: 0.0.0.0:80\r\n\r\n";
+    CHttpParser::createGetRequest(dest, host, port, path, auth, params);
+    BOOST_TEST(dest == resultValid1);
 
-    CIEC_STRING dest = "random text";
-    CIEC_STRING host = "0.0.0.0";
-    CIEC_STRING path = "/";
-
-    forte::com_infra::CHttpParser::createGetRequest(dest, host, path);
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), resultValid1));
-
+    const char *resultValid2 = "GET / HTTP/1.1\r\nHost: 192.168.0.1:80\r\n\r\n";
     host = "192.168.0.1";
-    forte::com_infra::CHttpParser::createGetRequest(dest, host, path);
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), resultValid2));
+    CHttpParser::createGetRequest(dest, host, port, path, auth, params);
+    BOOST_TEST(dest == resultValid2);
 
+    const char *resultValid3 = "GET /lookFor HTTP/1.1\r\nHost: 192.168.0.1:80\r\n\r\n";
     path = "/lookFor";
-    forte::com_infra::CHttpParser::createGetRequest(dest, host, path);
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), resultValid3));
+    CHttpParser::createGetRequest(dest, host, port, path, auth, params);
+    BOOST_TEST(dest == resultValid3);
 
+    const char *resultValid4 = "GET /lookFor/something/else HTTP/1.1\r\nHost: 192.168.0.1:80\r\n\r\n";
     path = "/lookFor/something/else";
-    forte::com_infra::CHttpParser::createGetRequest(dest, host, path);
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), resultValid4));
-
+    CHttpParser::createGetRequest(dest, host, port, path, auth, params);
+    BOOST_TEST(dest == resultValid4);
   }
 
   BOOST_AUTO_TEST_CASE(PUTPOST_test) {
+    std::string dest = "random text"s;
+    std::string destEmpty;
+    std::string host = "0.0.0.0"s;
+    short unsigned int port = 80;
+    std::string path = "/"s;
+    std::string auth = ""s;
+    std::string params = "key1=val1;key2=val2"s;
+    std::string body = "content of the body"s;
+    std::string contentType = "text/xml"s;
 
-    const char* putResultValid1 = "PUT / HTTP/1.1\r\nHost: 0.0.0.0\r\nContent-type: text/xml\r\nContent-length: 19\r\n\r\nkey1=val1;key2=val2";
-    const char* putResultValid1Changed =
-      "PUT / HTTP/1.1\r\nHost: 0.0.0.0\r\nContent-type: text/xml\r\nContent-length: 33\r\n\r\nkey1=val1Changed;key2Changed=val2";
-    const char* putResultValid2 = "PUT / HTTP/1.1\r\nHost: 192.168.0.1\r\nContent-type: text/xml\r\nContent-length: 19\r\n\r\nkey1=val1;key2=val2";
-    const char* putResultValid3 = "PUT /lookFor HTTP/1.1\r\nHost: 192.168.0.1\r\nContent-type: text/xml\r\nContent-length: 19\r\n\r\nkey1=val1;key2=val2";
-    const char* putResultValid4 =
-      "PUT /lookFor/something/else HTTP/1.1\r\nHost: 192.168.0.1\r\nContent-type: text/xml\r\nContent-length: 19\r\n\r\nkey1=val1;key2=val2";
+    const char *putResultValid1 = "PUT /?key1=val1;key2=val2 HTTP/1.1\r\nHost: 0.0.0.0:80\r\nContent-Type: "
+                                  "text/xml\r\nContent-Length: 19\r\n\r\ncontent of the body";
+    const char *postResultValid1 = "POST /?key1=val1;key2=val2 HTTP/1.1\r\nHost: 0.0.0.0:80\r\nContent-Type: "
+                                   "text/xml\r\nContent-Length: 19\r\n\r\ncontent of the body";
+    CHttpParser::createPutPostRequest(dest, host, port, path, auth, params, body, contentType, CHttpComLayer::e_PUT);
+    BOOST_TEST(dest == putResultValid1);
+    CHttpParser::createPutPostRequest(dest, host, port, path, auth, params, body, contentType, CHttpComLayer::e_POST);
+    BOOST_TEST(dest == postResultValid1);
 
-    const char* putEmptyData = "PUT /lookFor/something/else HTTP/1.1\r\nHost: 192.168.0.1\r\nContent-type: text/xml\r\nContent-length: 0\r\n\r\n";
-    const char* putJSONType =
-      "PUT /lookFor/something/else HTTP/1.1\r\nHost: 192.168.0.1\r\nContent-type: application/json\r\nContent-length: 29\r\n\r\n{\"key1\" : val1,\"key2\" : val2}";
+    const char *putResultValid2 = "PUT /?key1=val1;key2=val2 HTTP/1.1\r\nHost: 192.168.0.1:80\r\nContent-Type: "
+                                  "text/xml\r\nContent-Length: 19\r\n\r\ncontent of the body";
+    const char *postResultValid2 = "POST /?key1=val1;key2=val2 HTTP/1.1\r\nHost: 192.168.0.1:80\r\nContent-Type: "
+                                   "text/xml\r\nContent-Length: 19\r\n\r\ncontent of the body";
+    host = "192.168.0.1"s;
+    CHttpParser::createPutPostRequest(dest, host, port, path, auth, params, body, contentType, CHttpComLayer::e_PUT);
+    BOOST_TEST(dest == putResultValid2);
+    CHttpParser::createPutPostRequest(dest, host, port, path, auth, params, body, contentType, CHttpComLayer::e_POST);
+    BOOST_TEST(dest == postResultValid2);
 
-    const char* postResultValid1 = "POST / HTTP/1.1\r\nHost: 0.0.0.0\r\nContent-type: text/xml\r\nContent-length: 19\r\n\r\nkey1=val1;key2=val2";
-    const char* postResultValid1Changed =
-      "POST / HTTP/1.1\r\nHost: 0.0.0.0\r\nContent-type: text/xml\r\nContent-length: 33\r\n\r\nkey1=val1Changed;key2Changed=val2";
-    const char* postResultValid2 = "POST / HTTP/1.1\r\nHost: 192.168.0.1\r\nContent-type: text/xml\r\nContent-length: 19\r\n\r\nkey1=val1;key2=val2";
-    const char* postResultValid3 = "POST /lookFor HTTP/1.1\r\nHost: 192.168.0.1\r\nContent-type: text/xml\r\nContent-length: 19\r\n\r\nkey1=val1;key2=val2";
-    const char* postResultValid4 =
-      "POST /lookFor/something/else HTTP/1.1\r\nHost: 192.168.0.1\r\nContent-type: text/xml\r\nContent-length: 19\r\n\r\nkey1=val1;key2=val2";
+    const char *putResultValid3 = "PUT /lookFor?key1=val1;key2=val2 HTTP/1.1\r\nHost: 192.168.0.1:80\r\nContent-Type: "
+                                  "text/xml\r\nContent-Length: 19\r\n\r\ncontent of the body";
+    const char *postResultValid3 =
+        "POST /lookFor?key1=val1;key2=val2 HTTP/1.1\r\nHost: 192.168.0.1:80\r\nContent-Type: "
+        "text/xml\r\nContent-Length: 19\r\n\r\ncontent of the body";
+    path = "/lookFor"s;
+    CHttpParser::createPutPostRequest(dest, host, port, path, auth, params, body, contentType, CHttpComLayer::e_PUT);
+    BOOST_TEST(dest == putResultValid3);
+    CHttpParser::createPutPostRequest(dest, host, port, path, auth, params, body, contentType, CHttpComLayer::e_POST);
+    BOOST_TEST(dest == postResultValid3);
 
-    const char* postEmptyData = "POST /lookFor/something/else HTTP/1.1\r\nHost: 192.168.0.1\r\nContent-type: text/xml\r\nContent-length: 0\r\n\r\n";
+    const char *putResultValid4 =
+        "PUT /lookFor/something/else?key1=val1;key2=val2 HTTP/1.1\r\nHost: 192.168.0.1:80\r\nContent-Type: "
+        "text/xml\r\nContent-Length: 19\r\n\r\ncontent of the body";
+    const char *postResultValid4 =
+        "POST /lookFor/something/else?key1=val1;key2=val2 HTTP/1.1\r\nHost: 192.168.0.1:80\r\nContent-Type: "
+        "text/xml\r\nContent-Length: 19\r\n\r\ncontent of the body";
+    path = "/lookFor/something/else"s;
+    CHttpParser::createPutPostRequest(dest, host, port, path, auth, params, body, contentType, CHttpComLayer::e_PUT);
+    BOOST_TEST(dest == putResultValid4);
+    CHttpParser::createPutPostRequest(dest, host, port, path, auth, params, body, contentType, CHttpComLayer::e_POST);
+    BOOST_TEST(dest == postResultValid4);
 
-    const char* postJSONType =
-      "POST /lookFor/something/else HTTP/1.1\r\nHost: 192.168.0.1\r\nContent-type: application/json\r\nContent-length: 29\r\n\r\n{\"key1\" : val1,\"key2\" : val2}";
+    const char *putEmptyData = "PUT /lookFor/something/else?key1=val1;key2=val2 HTTP/1.1\r\nHost: "
+                               "192.168.0.1:80\r\nContent-Type: text/xml\r\nContent-Length: 0\r\n\r\n";
+    const char *postEmptyData = "POST /lookFor/something/else?key1=val1;key2=val2 HTTP/1.1\r\nHost: "
+                                "192.168.0.1:80\r\nContent-Type: text/xml\r\nContent-Length: 0\r\n\r\n";
+    body.clear();
+    CHttpParser::createPutPostRequest(dest, host, port, path, auth, params, body, contentType, CHttpComLayer::e_PUT);
+    BOOST_TEST(dest == putEmptyData);
+    CHttpParser::createPutPostRequest(dest, host, port, path, auth, params, body, contentType, CHttpComLayer::e_POST);
+    BOOST_TEST(dest == postEmptyData);
 
+    const char *putJSONType =
+        "PUT /lookFor/something/else?key1=val1;key2=val2 HTTP/1.1\r\nHost: 192.168.0.1:80\r\nContent-Type: "
+        "application/json\r\nContent-Length: 29\r\n\r\n{\"key1\" : val1,\"key2\" : val2}";
+    const char *postJSONType =
+        "POST /lookFor/something/else?key1=val1;key2=val2 HTTP/1.1\r\nHost: 192.168.0.1:80\r\nContent-Type: "
+        "application/json\r\nContent-Length: 29\r\n\r\n{\"key1\" : val1,\"key2\" : val2}";
+    contentType = "application/json"s;
+    body = "{\"key1\" : val1,\"key2\" : val2}"s;
+    CHttpParser::createPutPostRequest(dest, host, port, path, auth, params, body, contentType, CHttpComLayer::e_PUT);
+    BOOST_TEST(dest == putJSONType);
+    CHttpParser::createPutPostRequest(dest, host, port, path, auth, params, body, contentType, CHttpComLayer::e_POST);
+    BOOST_TEST(dest == postJSONType);
 
-    CIEC_STRING dest = "random text";
-    CIEC_STRING destEmpty = "";
-    CIEC_STRING host = "0.0.0.0";
-    CIEC_STRING path = "/";
-    CIEC_STRING data = "key1=val1;key2=val2";
-    CIEC_STRING dataChanged = "key1=val1Changed;key2Changed=val2";
-    CIEC_STRING contentType = "text/xml";
+    const char *putWithoutParams = "PUT /lookFor/something/else HTTP/1.1\r\nHost: 192.168.0.1:80\r\nContent-Type: "
+                                   "application/json\r\nContent-Length: 29\r\n\r\n{\"key1\" : val1,\"key2\" : val2}";
+    const char *postWithoutParams = "POST /lookFor/something/else HTTP/1.1\r\nHost: 192.168.0.1:80\r\nContent-Type: "
+                                    "application/json\r\nContent-Length: 29\r\n\r\n{\"key1\" : val1,\"key2\" : val2}";
+    params = ""s;
+    CHttpParser::createPutPostRequest(dest, host, port, path, auth, params, body, contentType, CHttpComLayer::e_PUT);
+    BOOST_TEST(dest == putWithoutParams);
+    CHttpParser::createPutPostRequest(dest, host, port, path, auth, params, body, contentType, CHttpComLayer::e_POST);
+    BOOST_TEST(dest == postWithoutParams);
 
-    forte::com_infra::CHttpParser::createPutPostRequest(dest, host, path, data, contentType, forte::com_infra::CHttpComLayer::e_PUT);
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), putResultValid1));
-    BOOST_CHECK_EQUAL(true, forte::com_infra::CHttpParser::changePutPostData(dest, dataChanged));
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), putResultValid1Changed));
-    BOOST_CHECK_EQUAL(true, forte::com_infra::CHttpParser::changePutPostData(dest, data));
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), putResultValid1));
-
-    forte::com_infra::CHttpParser::createPutPostRequest(dest, host, path, data, contentType, forte::com_infra::CHttpComLayer::e_POST);
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), postResultValid1));
-    BOOST_CHECK_EQUAL(true, forte::com_infra::CHttpParser::changePutPostData(dest, dataChanged));
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), postResultValid1Changed));
-    BOOST_CHECK_EQUAL(true, forte::com_infra::CHttpParser::changePutPostData(dest, data));
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), postResultValid1));
-
-    BOOST_CHECK_EQUAL(false, forte::com_infra::CHttpParser::changePutPostData(destEmpty, data));
-    dataChanged = "";
-    BOOST_CHECK_EQUAL(false, forte::com_infra::CHttpParser::changePutPostData(destEmpty, dataChanged));
-
-    host = "192.168.0.1";
-    forte::com_infra::CHttpParser::createPutPostRequest(dest, host, path, data, contentType, forte::com_infra::CHttpComLayer::e_PUT);
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), putResultValid2));
-    forte::com_infra::CHttpParser::createPutPostRequest(dest, host, path, data, contentType, forte::com_infra::CHttpComLayer::e_POST);
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), postResultValid2));
-
-    path = "/lookFor";
-    forte::com_infra::CHttpParser::createPutPostRequest(dest, host, path, data, contentType, forte::com_infra::CHttpComLayer::e_PUT);
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), putResultValid3));
-    forte::com_infra::CHttpParser::createPutPostRequest(dest, host, path, data, contentType, forte::com_infra::CHttpComLayer::e_POST);
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), postResultValid3));
-
-    path = "/lookFor/something/else";
-    forte::com_infra::CHttpParser::createPutPostRequest(dest, host, path, data, contentType, forte::com_infra::CHttpComLayer::e_PUT);
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), putResultValid4));
-    forte::com_infra::CHttpParser::createPutPostRequest(dest, host, path, data, contentType, forte::com_infra::CHttpComLayer::e_POST);
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), postResultValid4));
-
-    data = "";
-    forte::com_infra::CHttpParser::createPutPostRequest(dest, host, path, data, contentType, forte::com_infra::CHttpComLayer::e_PUT);
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), putEmptyData));
-    forte::com_infra::CHttpParser::createPutPostRequest(dest, host, path, data, contentType, forte::com_infra::CHttpComLayer::e_POST);
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), postEmptyData));
-
-    contentType = "application/json";
-    data = "{\"key1\" : val1,\"key2\" : val2}";
-    forte::com_infra::CHttpParser::createPutPostRequest(dest, host, path, data, contentType, forte::com_infra::CHttpComLayer::e_PUT);
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), putJSONType));
-    forte::com_infra::CHttpParser::createPutPostRequest(dest, host, path, data, contentType, forte::com_infra::CHttpComLayer::e_POST);
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), postJSONType));
+    const char *putWithAuth = "PUT /lookFor/something/else HTTP/1.1\r\nHost: 192.168.0.1:80\r\nAuthorization: Token "
+                              "hereComesTheToken\r\nContent-Type: application/json\r\nContent-Length: "
+                              "29\r\n\r\n{\"key1\" : val1,\"key2\" : val2}";
+    const char *postWitAuth = "POST /lookFor/something/else HTTP/1.1\r\nHost: 192.168.0.1:80\r\nAuthorization: Token "
+                              "hereComesTheToken\r\nContent-Type: application/json\r\nContent-Length: "
+                              "29\r\n\r\n{\"key1\" : val1,\"key2\" : val2}";
+    auth = "Token hereComesTheToken"s;
+    CHttpParser::createPutPostRequest(dest, host, port, path, auth, params, body, contentType, CHttpComLayer::e_PUT);
+    BOOST_TEST(dest == putWithAuth);
+    CHttpParser::createPutPostRequest(dest, host, port, path, auth, params, body, contentType, CHttpComLayer::e_POST);
+    BOOST_TEST(dest == postWitAuth);
   }
 
   BOOST_AUTO_TEST_CASE(parseResponse_test) {
+    std::string validReponse = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nkey1=val1;key2=val2"s;
+    std::string validReponseNoBody = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 0\r\n\r\n"s;
+    std::string worngFirstLine = "HTTP/1.1 200 OK\nContent-Type: text/html"s;
+    std::string worngStatusLine = "HTTP/1.1 200OK\r\nContent-Type: text/html\r\n\r\nkey1=val1;key2=val2"s;
+    std::string body;
+    std::string responseCode;
 
-    CIEC_STRING validReponse = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\nkey1=val1;key2=val2";
-    CIEC_STRING validReponseNoBody = "HTTP/1.1 200 OK\r\n";
-    CIEC_STRING worngFirstLine = "HTTP/1.1 200 OK\nContent-Type: text/html";
-    CIEC_STRING worngStatusLine = "HTTP/1.1 200OK\r\nContent-Type: text/html\r\n\r\nkey1=val1;key2=val2";
+    BOOST_TEST(true == CHttpParser::parseResponse(body, responseCode, validReponse.data()));
+    BOOST_TEST(body == "key1=val1;key2=val2"s);
+    BOOST_TEST(responseCode == "200"s);
 
-    CIEC_STRING body;
-    CIEC_STRING responseCode;
+    responseCode.clear();
+    BOOST_TEST(true == CHttpParser::parseResponse(body, responseCode, validReponseNoBody.data()));
+    BOOST_TEST(body == ""s);
+    BOOST_TEST(responseCode == "200"s);
 
-    BOOST_CHECK_EQUAL(true, forte::com_infra::CHttpParser::parseResponse(body, responseCode, validReponse.getValue()));
-    BOOST_CHECK_EQUAL(0, strcmp(body.getValue(), "key1=val1;key2=val2"));
-    BOOST_CHECK_EQUAL(0, strcmp(responseCode.getValue(), "200"));
-
-    responseCode = "";
-    BOOST_CHECK_EQUAL(true, forte::com_infra::CHttpParser::parseResponse(body, responseCode, validReponseNoBody.getValue()));
-    BOOST_CHECK_EQUAL(0, strcmp(body.getValue(), ""));
-    BOOST_CHECK_EQUAL(0, strcmp(responseCode.getValue(), "200"));
-
-    BOOST_CHECK_EQUAL(false, forte::com_infra::CHttpParser::parseResponse(body, responseCode, worngFirstLine.getValue()));
-    BOOST_CHECK_EQUAL(false, forte::com_infra::CHttpParser::parseResponse(body, responseCode, worngStatusLine.getValue()));
-
+    BOOST_TEST(false == CHttpParser::parseResponse(body, responseCode, worngFirstLine.data()));
+    BOOST_TEST(false == CHttpParser::parseResponse(body, responseCode, worngStatusLine.data()));
   }
 
   BOOST_AUTO_TEST_CASE(createResponse_test) {
+    std::string dest;
+    std::string result = "HTTP/1.1 200 OK"s;
+    std::string contentType = "application/json"s;
+    std::string data = "{\"key1\" : val1,\"key2\" : val2}"s;
 
-    const char* validResult = "HTTP/1.1 200 OK\r\nContent-type: application/json\r\nContent-length: 29\r\n\r\n{\"key1\" : val1,\"key2\" : val2}";
-    const char* validResultNoBody = "HTTP/1.1 200 OK\r\n";
+    const char *validResult =
+        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 29\r\n\r\n{\"key1\" "
+        ": val1,\"key2\" : val2}";
+    CHttpParser::createResponse(dest, result, contentType, data);
+    BOOST_TEST(dest == validResult);
 
-    CIEC_STRING dest;
-    CIEC_STRING result = "HTTP/1.1 200 OK";
-    CIEC_STRING contentType = "application/json";
-    CIEC_STRING data = "{\"key1\" : val1,\"key2\" : val2}";
-
-    forte::com_infra::CHttpParser::createResponse(dest, result, contentType, data);
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), validResult));
-
-    data = "";
-    forte::com_infra::CHttpParser::createResponse(dest, result, contentType, data);
-    BOOST_CHECK_EQUAL(0, strcmp(dest.getValue(), validResultNoBody));
-
+    const char *validResultNoBody = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 0\r\n\r\n";
+    data.clear();
+    CHttpParser::createResponse(dest, result, contentType, data);
+    BOOST_TEST(dest == validResultNoBody);
   }
 
   BOOST_AUTO_TEST_CASE(parseGetRequest_test) {
-    CIEC_STRING resultValidNoParameters = "GET / HTTP/1.1\r\nHost: 0.0.0.0\r\n\r\n";
-    CIEC_STRING resultValidNoParameters2 = "GET /path/to/look HTTP/1.1\r\nHost: 0.0.0.0\r\n\r\n";
-    CIEC_STRING resultValidParam = "GET /?key1=val1 HTTP/1.1\r\nHost: 0.0.0.0\r\n\r\n";
-    CIEC_STRING resultValidParams = "GET /?key1=val1&key2=val2 HTTP/1.1\r\nHost: 0.0.0.0\r\n\r\n";
-    CIEC_STRING resultValidParam2 = "GET /path/to/look?key1=val1 HTTP/1.1\r\nHost: 0.0.0.0\r\n\r\n";
-    CIEC_STRING resultValidParams2 = "GET /path/to/look?key1=val1&key2=val2 HTTP/1.1\r\nHost: 0.0.0.0\r\n\r\n";
+    std::string resultValidNoParameters = "GET / HTTP/1.1\r\nHost: 0.0.0.0\r\n\r\n"s;
+    std::string resultValidNoParameters2 = "GET /path/to/look HTTP/1.1\r\nHost: 0.0.0.0\r\n\r\n"s;
+    std::string resultValidParam = "GET /?key1=val1 HTTP/1.1\r\nHost: 0.0.0.0\r\n\r\n"s;
+    std::string resultValidParams = "GET /?key1=val1&key2=val2 HTTP/1.1\r\nHost: 0.0.0.0\r\n\r\n"s;
+    std::string resultValidParam2 = "GET /path/to/look?key1=val1 HTTP/1.1\r\nHost: 0.0.0.0\r\n\r\n"s;
+    std::string resultValidParams2 = "GET /path/to/look?key1=val1&key2=val2 HTTP/1.1\r\nHost: 0.0.0.0\r\n\r\n"s;
+    std::string invalidGET = "Get / HTTP/1.1\r\nHost: 0.0.0.0\r\n\r\n"s;
+    std::string invalidPath = "GET /pathHTTP/1.1\r\n"s;
 
-    CIEC_STRING invalidGET = "Get / HTTP/1.1\r\nHost: 0.0.0.0\r\n\r\n";
-    CIEC_STRING invalidPath = "GET /pathHTTP/1.1\r\n";
+    std::string path;
+    std::vector<std::string> parameterNames;
+    std::vector<std::string> parameterValues;
 
-    CIEC_STRING path;
-    CSinglyLinkedList<CIEC_STRING> parameterNames;
-    CSinglyLinkedList<CIEC_STRING> parameterValues;
+    BOOST_TEST(true ==
+               CHttpParser::parseGetRequest(path, parameterNames, parameterValues, resultValidNoParameters.data()));
+    BOOST_TEST(path == "/"s);
+    BOOST_TEST(true == parameterNames.empty());
+    BOOST_TEST(true == parameterValues.empty());
 
-    BOOST_CHECK_EQUAL(true, forte::com_infra::CHttpParser::parseGetRequest(path, parameterNames, parameterValues, resultValidNoParameters.getValue()));
-    BOOST_CHECK_EQUAL(0, strcmp(path.getValue(), "/"));
-    BOOST_CHECK_EQUAL(true, parameterNames.isEmpty());
-    BOOST_CHECK_EQUAL(true, parameterValues.isEmpty());
+    BOOST_TEST(true ==
+               CHttpParser::parseGetRequest(path, parameterNames, parameterValues, resultValidNoParameters2.data()));
+    BOOST_TEST(path == "/path/to/look"s);
+    BOOST_TEST(true == parameterNames.empty());
+    BOOST_TEST(true == parameterValues.empty());
 
-    BOOST_CHECK_EQUAL(true, forte::com_infra::CHttpParser::parseGetRequest(path, parameterNames, parameterValues, resultValidNoParameters2.getValue()));
-    BOOST_CHECK_EQUAL(0, strcmp(path.getValue(), "/path/to/look"));
-    BOOST_CHECK_EQUAL(true, parameterNames.isEmpty());
-    BOOST_CHECK_EQUAL(true, parameterValues.isEmpty());
+    BOOST_TEST(true == CHttpParser::parseGetRequest(path, parameterNames, parameterValues, resultValidParam.data()));
+    BOOST_TEST(path == "/"s);
 
-    BOOST_CHECK_EQUAL(true, forte::com_infra::CHttpParser::parseGetRequest(path, parameterNames, parameterValues, resultValidParam.getValue()));
-    BOOST_CHECK_EQUAL(0, strcmp(path.getValue(), "/"));
+    BOOST_TEST(parameterNames[0] == "key1"s);
+    BOOST_TEST(parameterValues[0] == "val1"s);
 
-    CSinglyLinkedList<CIEC_STRING>::Iterator namesIter = parameterNames.begin();
-    CSinglyLinkedList<CIEC_STRING>::Iterator valuesIter = parameterValues.begin();
+    parameterNames.clear();
+    parameterValues.clear();
 
-    BOOST_CHECK_EQUAL(0, strcmp((*namesIter).getValue(), "key1"));
-    BOOST_CHECK_EQUAL(0, strcmp((*valuesIter).getValue(), "val1"));
+    BOOST_TEST(true, CHttpParser::parseGetRequest(path, parameterNames, parameterValues, resultValidParams.data()));
+    BOOST_TEST(path == "/");
 
-    parameterNames.clearAll();
-    parameterValues.clearAll();
+    BOOST_TEST(parameterNames[0] == "key1"s);
+    BOOST_TEST(parameterValues[0] == "val1"s);
+    BOOST_TEST(parameterNames[1] == "key2"s);
+    BOOST_TEST(parameterValues[1] == "val2"s);
 
-    BOOST_CHECK_EQUAL(true, forte::com_infra::CHttpParser::parseGetRequest(path, parameterNames, parameterValues, resultValidParams.getValue()));
-    BOOST_CHECK_EQUAL(0, strcmp(path.getValue(), "/"));
+    parameterNames.clear();
+    parameterValues.clear();
 
-    namesIter = parameterNames.begin();
-    valuesIter = parameterValues.begin();
+    BOOST_TEST(true == CHttpParser::parseGetRequest(path, parameterNames, parameterValues, resultValidParam2.data()));
+    BOOST_TEST(path == "/path/to/look"s);
 
-    BOOST_CHECK_EQUAL(0, strcmp((*namesIter).getValue(), "key1"));
-    BOOST_CHECK_EQUAL(0, strcmp((*valuesIter).getValue(), "val1"));
-    ++namesIter;
-    ++valuesIter;
-    BOOST_CHECK_EQUAL(0, strcmp((*namesIter).getValue(), "key2"));
-    BOOST_CHECK_EQUAL(0, strcmp((*valuesIter).getValue(), "val2"));
+    BOOST_TEST(parameterNames[0] == "key1"s);
+    BOOST_TEST(parameterValues[0] == "val1"s);
 
-    parameterNames.clearAll();
-    parameterValues.clearAll();
+    parameterNames.clear();
+    parameterValues.clear();
 
-    BOOST_CHECK_EQUAL(true, forte::com_infra::CHttpParser::parseGetRequest(path, parameterNames, parameterValues, resultValidParam2.getValue()));
-    BOOST_CHECK_EQUAL(0, strcmp(path.getValue(), "/path/to/look"));
+    BOOST_TEST(true == CHttpParser::parseGetRequest(path, parameterNames, parameterValues, resultValidParams2.data()));
+    BOOST_TEST(path == "/path/to/look"s);
 
-    namesIter = parameterNames.begin();
-    valuesIter = parameterValues.begin();
+    BOOST_TEST(parameterNames[0] == "key1"s);
+    BOOST_TEST(parameterValues[0] == "val1");
+    BOOST_TEST(parameterNames[1] == "key2"s);
+    BOOST_TEST(parameterValues[1] == "val2"s);
 
-    BOOST_CHECK_EQUAL(0, strcmp((*namesIter).getValue(), "key1"));
-    BOOST_CHECK_EQUAL(0, strcmp((*valuesIter).getValue(), "val1"));
-
-    parameterNames.clearAll();
-    parameterValues.clearAll();
-
-    BOOST_CHECK_EQUAL(true, forte::com_infra::CHttpParser::parseGetRequest(path, parameterNames, parameterValues, resultValidParams2.getValue()));
-    BOOST_CHECK_EQUAL(0, strcmp(path.getValue(), "/path/to/look"));
-
-    namesIter = parameterNames.begin();
-    valuesIter = parameterValues.begin();
-
-    BOOST_CHECK_EQUAL(0, strcmp((*namesIter).getValue(), "key1"));
-    BOOST_CHECK_EQUAL(0, strcmp((*valuesIter).getValue(), "val1"));
-    ++namesIter;
-    ++valuesIter;
-    BOOST_CHECK_EQUAL(0, strcmp((*namesIter).getValue(), "key2"));
-    BOOST_CHECK_EQUAL(0, strcmp((*valuesIter).getValue(), "val2"));
-
-    BOOST_CHECK_EQUAL(false, forte::com_infra::CHttpParser::parseGetRequest(path, parameterNames, parameterValues, invalidGET.getValue()));
-    BOOST_CHECK_EQUAL(false, forte::com_infra::CHttpParser::parseGetRequest(path, parameterNames, parameterValues, invalidPath.getValue()));
-
+    BOOST_TEST(false == CHttpParser::parseGetRequest(path, parameterNames, parameterValues, invalidGET.data()));
+    BOOST_TEST(false == CHttpParser::parseGetRequest(path, parameterNames, parameterValues, invalidPath.data()));
   }
 
   BOOST_AUTO_TEST_SUITE_END()
+} // namespace forte::com_infra::http::test

@@ -1,5 +1,7 @@
 /*******************************************************************************
- * Copyright (c) 2018 fortiss GmbH
+ * Copyright (c) 2018, 2024 fortiss GmbH
+ *                          Martin Erich Jobst
+ *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * http://www.eclipse.org/legal/epl-2.0.
@@ -8,39 +10,35 @@
  *
  * Contributors:
  *   Alois Zoitl  - initial API and implementation and/or initial documentation
+ *   Martin Jobst - add smart pointer for internal FBs
  *******************************************************************************/
 
 #include "fbtesterglobalfixture.h"
-#ifdef FORTE_ENABLE_GENERATED_SOURCE_CPP
-#include "fbtesterglobalfixture_gen.cpp"
-#endif
+
+using namespace forte::literals;
+
 #include <boost/test/unit_test.hpp>
 
-const static SFBInterfaceSpec gscTestDevSpec = { 0, 0, 0, 0, 0, 0, 0,
-          0, 0, 0, 0, 0, 0, 0,
-          0,
-          0 };
+namespace forte::test {
+  std::unique_ptr<CTesterDevice> CFBTestDataGlobalFixture::smTestDev;
 
-CDevice *CFBTestDataGlobalFixture::smTestDev;
-CResource *CFBTestDataGlobalFixture::smTestRes;
+  CTesterDevice::CTesterDevice(const StringId paInstanceNameId) :
+      CDevice(scTestDevSpec, paInstanceNameId),
+      mResource("EMB_RES"_STRID, *this) {
+  }
 
-CFBTestDataGlobalFixture::CFBTestDataGlobalFixture(){
-  //setup is done in the setup so that boost_test can throw exceptions
-  smTestDev = new CDevice(&gscTestDevSpec, CStringDictionary::scm_nInvalidStringId, 0, 0);
-  //mimick the behavior provided by typelib
-  smTestDev->changeFBExecutionState(cg_nMGM_CMD_Reset);
-
-  smTestRes = (CResource *)CTypeLib::createFB(g_nStringIdEMB_RES, g_nStringIdEMB_RES, smTestDev);
-
-  if(smTestRes != 0){
-    smTestDev->addFB(smTestRes);
+  CFBTestDataGlobalFixture::CFBTestDataGlobalFixture() {
+    // setup is done in the setup so that boost_test can throw exceptions
+    smTestDev = std::make_unique<CTesterDevice>();
+    // mimick the behavior provided by typelib
+    smTestDev->initialize();
+    smTestDev->changeExecutionState(EMGMCommandType::Reset);
     smTestDev->startDevice();
   }
-}
 
-
-CFBTestDataGlobalFixture::~CFBTestDataGlobalFixture(){
-  smTestDev->changeFBExecutionState(cg_nMGM_CMD_Stop);
-  delete smTestDev;
-  //we don't need to delete the res here as the res is deletes in the destructor of the device
-}
+  CFBTestDataGlobalFixture::~CFBTestDataGlobalFixture() {
+    smTestDev->changeExecutionState(EMGMCommandType::Stop);
+    smTestDev.reset();
+    // we don't need to delete the res here as the res is deletes in the destructor of the device
+  }
+} // namespace forte::test

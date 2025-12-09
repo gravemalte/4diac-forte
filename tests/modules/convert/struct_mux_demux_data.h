@@ -13,91 +13,201 @@
 #ifndef _STRUCT_MUX_DEMUX_DATA_H_
 #define _STRUCT_MUX_DEMUX_DATA_H_
 
-#include "forte_struct.h"
+#include "forte/datatypes/forte_struct.h"
 
-#include "forte_int.h"
-#include "forte_string.h"
+#include "forte/datatypes/forte_int.h"
+#include "forte/datatypes/forte_string.h"
+#include "forte/datatypes/forte_array_fixed.h"
 
+namespace forte::eclipse4diac::convert::test {
+  class CIEC_Struct_Muxer_Test_Struct_1 : public CIEC_STRUCT {
+      DECLARE_FIRMWARE_DATATYPE(Struct_Muxer_Test_Struct_1)
 
-class CIEC_Struct_Muxer_Test_Struct_1 : public CIEC_STRUCT {
-  DECLARE_FIRMWARE_DATATYPE(Struct_Muxer_Test_Struct_1)
+    public:
+      CIEC_INT Var1;
+      CIEC_INT Var2;
+      CIEC_STRING Var3;
 
-  public:
-    CIEC_Struct_Muxer_Test_Struct_1();
+      CIEC_Struct_Muxer_Test_Struct_1() = default;
 
-    virtual ~CIEC_Struct_Muxer_Test_Struct_1() {
-    }
+      size_t getStructSize() const override {
+        return 3;
+      }
 
-    CIEC_INT &Var1() {
-      return *static_cast<CIEC_INT*>(getMember(0));
-    }
+      const StringId *elementNames() const override {
+        return scmElementNames;
+      }
 
-    CIEC_INT &Var2() {
-      return *static_cast<CIEC_INT*>(getMember(1));
-    }
+      StringId getStructTypeNameID() const override;
 
-    CIEC_STRING &Var3() {
-      return *static_cast<CIEC_STRING*>(getMember(2));
-    }
+      CIEC_ANY *getMember(size_t paMemberIndex) override {
+        switch (paMemberIndex) {
+          case 0: return &Var1;
+          case 1: return &Var2;
+          case 2: return &Var3;
+        }
+        return nullptr;
+      }
 
-  private:
-    static const CStringDictionary::TStringId scm_unElementTypes[];
-    static const CStringDictionary::TStringId scm_unElementNames[];
-};
+      const CIEC_ANY *getMember(size_t paMemberIndex) const override {
+        switch (paMemberIndex) {
+          case 0: return &Var1;
+          case 1: return &Var2;
+          case 2: return &Var3;
+        }
+        return nullptr;
+      }
 
-class CIEC_Struct_Muxer_Test_Struct_2 : public CIEC_STRUCT {
-  DECLARE_FIRMWARE_DATATYPE(Struct_Muxer_Test_Struct_2)
+    private:
+      static const StringId scmElementNames[];
+  };
 
-  public:
-    CIEC_Struct_Muxer_Test_Struct_2();
+  class CIEC_Struct_Muxer_Test_Struct_2 : public CIEC_STRUCT {
+      DECLARE_FIRMWARE_DATATYPE(Struct_Muxer_Test_Struct_2)
 
-    virtual ~CIEC_Struct_Muxer_Test_Struct_2() {
-    }
+    public:
+      CIEC_INT Var1;
+      CIEC_STRING Var2;
+      CIEC_INT Var3;
 
-    CIEC_INT &Var1() {
-      return *static_cast<CIEC_INT*>(getMember(0));
-    }
+      CIEC_Struct_Muxer_Test_Struct_2() = default;
 
-    CIEC_STRING &Var2() {
-      return *static_cast<CIEC_STRING*>(getMember(1));
-    }
+      size_t getStructSize() const override {
+        return 3;
+      }
 
-    CIEC_INT &Var3() {
-      return *static_cast<CIEC_INT*>(getMember(2));
-    }
+      const StringId *elementNames() const override {
+        return scmElementNames;
+      }
 
-  private:
-    static const CStringDictionary::TStringId scm_unElementTypes[];
-    static const CStringDictionary::TStringId scm_unElementNames[];
-};
+      StringId getStructTypeNameID() const override;
 
-class CIEC_Struct_Muxer_Test_Struct_3 : public CIEC_STRUCT {
-  DECLARE_FIRMWARE_DATATYPE(Struct_Muxer_Test_Struct_3)
+      CIEC_ANY *getMember(size_t paMemberIndex) override {
+        switch (paMemberIndex) {
+          case 0: return &Var1;
+          case 1: return &Var2;
+          case 2: return &Var3;
+        }
+        return nullptr;
+      }
 
-  public:
-    CIEC_Struct_Muxer_Test_Struct_3();
+      const CIEC_ANY *getMember(size_t paMemberIndex) const override {
+        switch (paMemberIndex) {
+          case 0: return &Var1;
+          case 1: return &Var2;
+          case 2: return &Var3;
+        }
+        return nullptr;
+      }
 
-    virtual ~CIEC_Struct_Muxer_Test_Struct_3() {
-    }
+    private:
+      static const StringId scmElementNames[];
+  };
 
-  private:
-    static const CStringDictionary::TStringId scm_unElementTypes[];
-    static const CStringDictionary::TStringId scm_unElementNames[];
-};
+  class CIEC_Struct_Muxer_Test_Struct_3 : public CIEC_STRUCT {
+      DECLARE_FIRMWARE_DATATYPE(Struct_Muxer_Test_Struct_3)
 
-class CIEC_Struct_Muxer_Test_Struct_4 : public CIEC_STRUCT {
-  DECLARE_FIRMWARE_DATATYPE(Struct_Muxer_Test_Struct_4)
+    public:
+      CIEC_Struct_Muxer_Test_Struct_3() = default;
 
-  public:
-    CIEC_Struct_Muxer_Test_Struct_4();
+      size_t getStructSize() const override {
+        return 0;
+      }
 
-    virtual ~CIEC_Struct_Muxer_Test_Struct_4() {
-    }
+      const StringId *elementNames() const override {
+        return scmElementNames;
+      }
 
-  private:
-    static const CStringDictionary::TStringId scm_unElementTypes[];
-    static const CStringDictionary::TStringId scm_unElementNames[];
-};
+      StringId getStructTypeNameID() const override;
 
+      CIEC_ANY *getMember(size_t) override {
+        return nullptr;
+      }
 
+      const CIEC_ANY *getMember(size_t) const override {
+        return nullptr;
+      }
+
+    private:
+      static const StringId scmElementNames[];
+  };
+
+  class CIEC_Struct_Muxer_Test_Struct_4 : public CIEC_STRUCT {
+      DECLARE_FIRMWARE_DATATYPE(Struct_Muxer_Test_Struct_4)
+
+    public:
+      CIEC_INT data[256];
+
+      CIEC_Struct_Muxer_Test_Struct_4() = default;
+
+      size_t getStructSize() const override {
+        return 256;
+      }
+
+      const StringId *elementNames() const override {
+        return scmElementNames;
+      }
+
+      StringId getStructTypeNameID() const override;
+
+      CIEC_ANY *getMember(size_t paMemberIndex) override {
+        if (paMemberIndex < 256) {
+          return &data[paMemberIndex];
+        }
+        return nullptr;
+      }
+
+      const CIEC_ANY *getMember(size_t paMemberIndex) const override {
+        if (paMemberIndex < 256) {
+          return &data[paMemberIndex];
+        }
+        return nullptr;
+      }
+
+    private:
+      static const StringId scmElementNames[];
+  };
+
+  class CIEC_Struct_Muxer_Test_Struct_5 : public CIEC_STRUCT {
+      DECLARE_FIRMWARE_DATATYPE(Struct_Muxer_Test_Struct_5)
+
+    public:
+      CIEC_INT Var1;
+      CIEC_ARRAY_FIXED<CIEC_INT, 0, 3> Var2;
+      CIEC_ARRAY_FIXED<CIEC_ARRAY_FIXED<CIEC_INT, 0, 3>, 0, 1> Var3;
+
+      CIEC_Struct_Muxer_Test_Struct_5() = default;
+
+      size_t getStructSize() const override {
+        return 3;
+      }
+
+      const StringId *elementNames() const override {
+        return scmElementNames;
+      }
+
+      StringId getStructTypeNameID() const override;
+
+      CIEC_ANY *getMember(size_t paMemberIndex) override {
+        switch (paMemberIndex) {
+          case 0: return &Var1;
+          case 1: return &Var2;
+          case 2: return &Var3;
+        }
+        return nullptr;
+      }
+
+      const CIEC_ANY *getMember(size_t paMemberIndex) const override {
+        switch (paMemberIndex) {
+          case 0: return &Var1;
+          case 1: return &Var2;
+          case 2: return &Var3;
+        }
+        return nullptr;
+      }
+
+    private:
+      static const StringId scmElementNames[];
+  };
+} // namespace forte::eclipse4diac::convert::test
 #endif /* TESTS_MODULES_CONVERT_STRUCT_MUX_DEMUX_DATA_H_ */

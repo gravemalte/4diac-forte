@@ -12,214 +12,114 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include "../../../src/core/cominfra/basecommfb.h"
+#include "forte/cominfra/basecommfb.h"
 
-class CExtractLayerAndParamsCommFB : public forte::com_infra::CBaseCommFB {
-  public:
-    static char *extractLayerIdAndParams(char **paRemainingID, char **paLayerParams) {
-      return forte::com_infra::CBaseCommFB::extractLayerIdAndParams(paRemainingID, paLayerParams);
-    }
-};
+namespace forte::com_infra::test {
+  class CExtractLayerAndParamsCommFB : public CBaseCommFB {
+    public:
+      static char *extractLayerIdAndParams(char **paRemainingID, char **paLayerParams) {
+        return CBaseCommFB::extractLayerIdAndParams(paRemainingID, paLayerParams);
+      }
+  };
 
-BOOST_AUTO_TEST_SUITE (extractLayerAndParams_test)
+  BOOST_AUTO_TEST_SUITE(extractLayerAndParams_test)
 
-BOOST_AUTO_TEST_CASE(noExtraSquareBrackets_test) {
+  BOOST_AUTO_TEST_CASE(emptyId_test) {
 
+    const char *stringToTest = "";
 
-  const char* stringToTest = "id[normalParams].id2[openingBracket[].id3[twoOpeningBrackets[[].id4[closingBracket\\]].id5[twoClosingBrackes\\]\\]].id6[bothBrackets[\\]].id7[bothBracketsInverted\\][]";
+    char *remainingId = new char[strlen(stringToTest) + 1];
+    char *remainingIdToDelete = remainingId;
 
-  char* remainingId = new char[strlen(stringToTest) + 1];
-  char *remainingIdToDelete = remainingId;
+    memcpy(remainingId, stringToTest, strlen(stringToTest) + 1);
+    char *layerParams = nullptr;
+    char *layerId = nullptr;
 
-  memcpy(remainingId, stringToTest, strlen(stringToTest) + 1);
-  char* layerParams = 0;
-  char* layerId = 0;
+    layerId = CExtractLayerAndParamsCommFB::extractLayerIdAndParams(&remainingId, &layerParams);
 
-  layerId = CExtractLayerAndParamsCommFB::extractLayerIdAndParams(&remainingId, &layerParams);
+    BOOST_CHECK(layerId == nullptr);
 
-  BOOST_CHECK(0 == strcmp(layerId, "id"));
-  BOOST_CHECK(0 == strcmp(layerParams, "normalParams"));
-  BOOST_CHECK(0 == strcmp(remainingId, "id2[openingBracket[].id3[twoOpeningBrackets[[].id4[closingBracket\\]].id5[twoClosingBrackes\\]\\]].id6[bothBrackets[\\]].id7[bothBracketsInverted\\][]"));
+    delete[] remainingIdToDelete;
+  }
 
-  layerId = CExtractLayerAndParamsCommFB::extractLayerIdAndParams(&remainingId, &layerParams);
+  BOOST_AUTO_TEST_CASE(contained_bracket_test) {
 
-  BOOST_CHECK(0 == strcmp(layerId, "id2"));
-  BOOST_CHECK(0 == strcmp(layerParams, "openingBracket["));
-  BOOST_CHECK(0 == strcmp(remainingId, "id3[twoOpeningBrackets[[].id4[closingBracket\\]].id5[twoClosingBrackes\\]\\]].id6[bothBrackets[\\]].id7[bothBracketsInverted\\][]"));
+    const char *stringToTest = "layer[param[subparam]]";
 
-  layerId = CExtractLayerAndParamsCommFB::extractLayerIdAndParams(&remainingId, &layerParams);
+    char *remainingId = new char[strlen(stringToTest) + 1];
+    char *remainingIdToDelete = remainingId;
 
-  BOOST_CHECK(0 == strcmp(layerId, "id3"));
-  BOOST_CHECK(0 == strcmp(layerParams, "twoOpeningBrackets[["));
-  BOOST_CHECK(0 == strcmp(remainingId, "id4[closingBracket\\]].id5[twoClosingBrackes\\]\\]].id6[bothBrackets[\\]].id7[bothBracketsInverted\\][]"));
+    memcpy(remainingId, stringToTest, strlen(stringToTest) + 1);
+    char *layerParams = nullptr;
+    char *layerId = nullptr;
 
-  layerId = CExtractLayerAndParamsCommFB::extractLayerIdAndParams(&remainingId, &layerParams);
+    layerId = CExtractLayerAndParamsCommFB::extractLayerIdAndParams(&remainingId, &layerParams);
 
-  BOOST_CHECK(0 == strcmp(layerId, "id4"));
-  BOOST_CHECK(0 == strcmp(layerParams, "closingBracket]"));
-  BOOST_CHECK(0 == strcmp(remainingId, "id5[twoClosingBrackes\\]\\]].id6[bothBrackets[\\]].id7[bothBracketsInverted\\][]"));
+    BOOST_CHECK(layerId != nullptr);
+    BOOST_CHECK_EQUAL("layer", layerId);
+    BOOST_CHECK(layerParams != nullptr);
+    BOOST_CHECK_EQUAL("param[subparam]", layerParams);
+    BOOST_CHECK(remainingId != nullptr);
+    BOOST_CHECK_EQUAL("", remainingId);
 
-  layerId = CExtractLayerAndParamsCommFB::extractLayerIdAndParams(&remainingId, &layerParams);
+    delete[] remainingIdToDelete;
+  }
 
-  BOOST_CHECK(0 == strcmp(layerId, "id5"));
-  BOOST_CHECK(0 == strcmp(layerParams, "twoClosingBrackes]]"));
-  BOOST_CHECK(0 == strcmp(remainingId, "id6[bothBrackets[\\]].id7[bothBracketsInverted\\][]"));
+  BOOST_AUTO_TEST_CASE(noOpeningBracket_test) {
 
-  layerId = CExtractLayerAndParamsCommFB::extractLayerIdAndParams(&remainingId, &layerParams);
+    const char *stringToTest = "id1]";
 
-  BOOST_CHECK(0 == strcmp(layerId, "id6"));
-  BOOST_CHECK(0 == strcmp(layerParams, "bothBrackets[]"));
-  BOOST_CHECK(0 == strcmp(remainingId, "id7[bothBracketsInverted\\][]"));
+    char *remainingId = new char[strlen(stringToTest) + 1];
+    char *remainingIdToDelete = remainingId;
 
-  layerId = CExtractLayerAndParamsCommFB::extractLayerIdAndParams(&remainingId, &layerParams);
+    memcpy(remainingId, stringToTest, strlen(stringToTest) + 1);
+    char *layerParams = nullptr;
+    char *layerId = nullptr;
 
-  BOOST_CHECK(0 == strcmp(layerId, "id7"));
-  BOOST_CHECK(0 == strcmp(layerParams, "bothBracketsInverted]["));
-  BOOST_CHECK(0 == strcmp(remainingId, ""));
+    layerId = CExtractLayerAndParamsCommFB::extractLayerIdAndParams(&remainingId, &layerParams);
 
-  delete[] remainingIdToDelete;
-}
+    BOOST_CHECK(layerId == nullptr);
 
-BOOST_AUTO_TEST_CASE(escapedSign_test) {
+    delete[] remainingIdToDelete;
+  }
 
-  const char* stringToTest = "id[\\\\].id2[\\\\\\]]";
+  BOOST_AUTO_TEST_CASE(noClosingBracket_test) {
 
-  char* remainingId = new char[strlen(stringToTest) + 1];
-  char *remainingIdToDelete = remainingId;
+    const char *stringToTest = "id1[";
 
-  memcpy(remainingId, stringToTest, strlen(stringToTest) + 1);
-  char* layerParams = 0;
-  char* layerId = 0;
+    char *remainingId = new char[strlen(stringToTest) + 1];
+    char *remainingIdToDelete = remainingId;
 
-  layerId = CExtractLayerAndParamsCommFB::extractLayerIdAndParams(&remainingId, &layerParams);
+    memcpy(remainingId, stringToTest, strlen(stringToTest) + 1);
+    char *layerParams = nullptr;
+    char *layerId = nullptr;
 
-  BOOST_CHECK(0 == strcmp(layerId, "id"));
-  BOOST_CHECK(0 == strcmp(layerParams, "\\"));
-  BOOST_CHECK(0 == strcmp(remainingId, "id2[\\\\\\]]"));
+    layerId = CExtractLayerAndParamsCommFB::extractLayerIdAndParams(&remainingId, &layerParams);
 
-  layerId = CExtractLayerAndParamsCommFB::extractLayerIdAndParams(&remainingId, &layerParams);
+    BOOST_CHECK(layerId == nullptr);
 
-  BOOST_CHECK(0 == strcmp(layerId, "id2"));
-  BOOST_CHECK(0 == strcmp(layerParams, "\\]"));
-  BOOST_CHECK(0 == strcmp(remainingId, ""));
+    delete[] remainingIdToDelete;
+  }
 
-  delete[] remainingIdToDelete;
-}
+  BOOST_AUTO_TEST_CASE(noId_test) {
 
-BOOST_AUTO_TEST_CASE(emptyId_test) {
+    const char *stringToTest = "[]";
 
-  const char* stringToTest = "";
+    char *remainingId = new char[strlen(stringToTest) + 1];
+    char *remainingIdToDelete = remainingId;
 
-  char* remainingId = new char[strlen(stringToTest) + 1];
-  char *remainingIdToDelete = remainingId;
+    memcpy(remainingId, stringToTest, strlen(stringToTest) + 1);
+    char *layerParams = nullptr;
+    char *layerId = nullptr;
 
-  memcpy(remainingId, stringToTest, strlen(stringToTest) + 1);
-  char* layerParams = 0;
-  char* layerId = 0;
+    layerId = CExtractLayerAndParamsCommFB::extractLayerIdAndParams(&remainingId, &layerParams);
 
-  layerId = CExtractLayerAndParamsCommFB::extractLayerIdAndParams(&remainingId, &layerParams);
+    BOOST_CHECK(0 == strcmp(layerId, ""));
+    BOOST_CHECK(0 == strcmp(layerParams, ""));
+    BOOST_CHECK(0 == strcmp(remainingId, ""));
 
-  BOOST_CHECK(layerId == 0);
+    delete[] remainingIdToDelete;
+  }
 
-  delete[] remainingIdToDelete;
-
-}
-
-
-BOOST_AUTO_TEST_CASE(noOpeningBracket_test) {
-
-  const char* stringToTest = "id1]";
-
-  char* remainingId = new char[strlen(stringToTest) + 1];
-  char *remainingIdToDelete = remainingId;
-
-  memcpy(remainingId, stringToTest, strlen(stringToTest) + 1);
-  char* layerParams = 0;
-  char* layerId = 0;
-
-  layerId = CExtractLayerAndParamsCommFB::extractLayerIdAndParams(&remainingId, &layerParams);
-
-  BOOST_CHECK(layerId == 0);
-
-  delete[] remainingIdToDelete;
-}
-
-BOOST_AUTO_TEST_CASE(noOpeningBracketWithScaped_test) {
-
-  const char* stringToTest = "id1\\[]";
-
-  char* remainingId = new char[strlen(stringToTest) + 1];
-  char *remainingIdToDelete = remainingId;
-
-  memcpy(remainingId, stringToTest, strlen(stringToTest) + 1);
-  char* layerParams = 0;
-  char* layerId = 0;
-
-  layerId = CExtractLayerAndParamsCommFB::extractLayerIdAndParams(&remainingId, &layerParams);
-
-  BOOST_CHECK(layerId == 0);
-
-  delete[] remainingIdToDelete;
-
-}
-
-BOOST_AUTO_TEST_CASE(noClosingBracket_test) {
-
-  const char* stringToTest = "id1[";
-
-  char* remainingId = new char[strlen(stringToTest) + 1];
-  char *remainingIdToDelete = remainingId;
-
-  memcpy(remainingId, stringToTest, strlen(stringToTest) + 1);
-  char* layerParams = 0;
-  char* layerId = 0;
-
-  layerId = CExtractLayerAndParamsCommFB::extractLayerIdAndParams(&remainingId, &layerParams);
-
-  BOOST_CHECK(layerId == 0);
-
-  delete[] remainingIdToDelete;
-
-}
-
-BOOST_AUTO_TEST_CASE(noClosingBracketWithScaped_test) {
-
-  const char* stringToTest = "id1[\\]";
-
-  char* remainingId = new char[strlen(stringToTest) + 1];
-  char *remainingIdToDelete = remainingId;
-
-  memcpy(remainingId, stringToTest, strlen(stringToTest) + 1);
-  char* layerParams = 0;
-  char* layerId = 0;
-
-  layerId = CExtractLayerAndParamsCommFB::extractLayerIdAndParams(&remainingId, &layerParams);
-
-  BOOST_CHECK(layerId == 0);
-
-  delete[] remainingIdToDelete;
-
-}
-
-BOOST_AUTO_TEST_CASE(noId_test) {
-
-  const char* stringToTest = "[]";
-
-  char* remainingId = new char[strlen(stringToTest) + 1];
-  char *remainingIdToDelete = remainingId;
-
-  memcpy(remainingId, stringToTest, strlen(stringToTest) + 1);
-  char* layerParams = 0;
-  char* layerId = 0;
-
-  layerId = CExtractLayerAndParamsCommFB::extractLayerIdAndParams(&remainingId, &layerParams);
-
-  BOOST_CHECK(0 == strcmp(layerId, ""));
-  BOOST_CHECK(0 == strcmp(layerParams, ""));
-  BOOST_CHECK(0 == strcmp(remainingId, ""));
-
-  delete[] remainingIdToDelete;
-
-}
-
-BOOST_AUTO_TEST_SUITE_END()
+  BOOST_AUTO_TEST_SUITE_END()
+} // namespace forte::com_infra::test

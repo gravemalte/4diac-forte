@@ -9,63 +9,56 @@
  * Contributors:
  *   Alois Zoitl  - initial API and implementation and/or initial documentation
  *******************************************************************************/
-#ifndef _CFB_TEST_H_
-#define _CFB_TEST_H_
 
-#include <cfb.h>
-#include <typelib.h>
-#include <forte_bool.h>
+#pragma once
 
-class FORTE_CFB_TEST: public CCompositeFB{
-  DECLARE_FIRMWARE_FB(FORTE_CFB_TEST)
+#include "forte/cfb.h"
+#include "forte/typelib.h"
+#include "forte/datatypes/forte_bool.h"
+#include "forte/iec61499/events/E_PERMIT_fbt.h"
+#include "forte/iec61499/events/E_SR_fbt.h"
+#include "forte/iec61499/events/E_SWITCH_fbt.h"
+#include "forte/iec61499/events/GEN_E_DEMUX_fbt.h"
+#include "forte/iec61499/events/GEN_E_MUX_fbt.h"
 
-private:
-  static const CStringDictionary::TStringId scm_anDataInputNames[];
-  static const CStringDictionary::TStringId scm_anDataInputTypeIds[];
-  CIEC_BOOL &QI() {
-    return *static_cast<CIEC_BOOL*>(getDI(0));
+namespace forte::test {
+  class FORTE_CFB_TEST final : public CCompositeFB {
+      DECLARE_FIRMWARE_FB(FORTE_CFB_TEST)
+
+    private:
+      static const TEventID scmEventSETID = 0;
+      static const TEventID scmEventRESETID = 1;
+      static const TEventID scmEventCNFID = 0;
+      static const TEventID scmEventCHANGEDID = 1;
+
+      CInternalFB<iec61499::events::FORTE_E_PERMIT> fb_PERMIT_OP;
+      CInternalFB<iec61499::events::FORTE_E_SR> fb_E_SR;
+      CInternalFB<iec61499::events::FORTE_E_SWITCH> fb_SET_CHANGED;
+      CInternalFB<iec61499::events::GEN_E_DEMUX> fb_E_DEMUX_2;
+      CInternalFB<iec61499::events::GEN_E_MUX> fb_E_MUX_2;
+      CInternalFB<iec61499::events::FORTE_E_SWITCH> fb_RESET_CHANGED;
+
+      void readInputData(TEventID paEIID) override;
+      void writeOutputData(TEventID paEIID) override;
+      void setInitialValues() override;
+      CDataConnection *getIf2InConUnchecked(TPortId paDIID) override;
+
+    public:
+      FORTE_CFB_TEST(StringId paInstanceNameId, CFBContainer &paContainer);
+
+      CEventConnection conn_CNF;
+      CEventConnection conn_CHANGED;
+
+      CDataConnection *conn_QI;
+
+      COutDataConnection<CIEC_BOOL> conn_QO;
+
+      COutDataConnection<CIEC_BOOL> conn_if2in_QI;
+
+      CIEC_ANY *getDI(size_t) override;
+      CIEC_ANY *getDO(size_t) override;
+      CEventConnection *getEOConUnchecked(TPortId) override;
+      CDataConnection **getDIConUnchecked(TPortId) override;
+      CDataConnection *getDOConUnchecked(TPortId) override;
   };
-
-  static const CStringDictionary::TStringId scm_anDataOutputNames[];
-  static const CStringDictionary::TStringId scm_anDataOutputTypeIds[];
-  CIEC_BOOL &SR() {
-    return *static_cast<CIEC_BOOL*>(getDO(0));
-  };
-
-  static const TEventID scm_nEventSETID = 0;
-  static const TEventID scm_nEventRESETID = 1;
-  static const TForteInt16 scm_anEIWithIndexes[];
-  static const TDataIOID scm_anEIWith[];
-  static const CStringDictionary::TStringId scm_anEventInputNames[];
-
-  static const TEventID scm_nEventCNFID = 0;
-  static const TEventID scm_nEventCHANGEDID = 1;
-  static const TForteInt16 scm_anEOWithIndexes[];
-  static const TDataIOID scm_anEOWith[];
-  static const CStringDictionary::TStringId scm_anEventOutputNames[];
-
-  static const SFBInterfaceSpec scm_stFBInterfaceSpec;
-
-   FORTE_FB_DATA_ARRAY(2, 1, 1, 0);
-
-  static const SCFB_FBInstanceData scm_astInternalFBs[];
-
-  static const SCFB_FBConnectionData scm_astEventConnections[];
-
-  static const SCFB_FBFannedOutConnectionData scm_astFannedOutEventConnections[];
-
-  static const SCFB_FBConnectionData scm_astDataConnections[];
-
-  static const SCFB_FBFannedOutConnectionData scm_astFannedOutDataConnections[];
-  static const SCFB_FBNData scm_stFBNData;
-
-public:
-  COMPOSITE_FUNCTION_BLOCK_CTOR(FORTE_CFB_TEST){
-  };
-
-  virtual ~FORTE_CFB_TEST(){};
-
-};
-
-#endif //close the ifdef sequence from the beginning of the file
-
+} // namespace forte::test
