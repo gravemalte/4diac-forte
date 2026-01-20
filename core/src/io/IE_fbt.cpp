@@ -42,7 +42,7 @@ namespace forte::io {
     };
   } // namespace
 
-  DEFINE_FIRMWARE_FB(FORTE_IE, "IE"_STRID)
+  DEFINE_FIRMWARE_FB(FORTE_IE, "eclipse4diac::io::IE"_STRID)
 
   FORTE_IE::FORTE_IE(const StringId paInstanceNameId, CFBContainer &paContainer) :
       CProcessInterfaceFB(paContainer, cFBInterfaceSpec, paInstanceNameId),
