@@ -17,7 +17,7 @@
 using namespace forte::literals;
 
 namespace forte::io {
-  DEFINE_FIRMWARE_FB(FORTE_QL, "QL"_STRID)
+  DEFINE_FIRMWARE_FB(FORTE_QL, "eclipse4diac::io::QL"_STRID)
 
   FORTE_QL::FORTE_QL(const StringId paInstanceNameId, CFBContainer &paContainer) :
       COutputFB<CIEC_LWORD>(paContainer, paInstanceNameId) {};

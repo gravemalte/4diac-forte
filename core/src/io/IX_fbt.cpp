@@ -18,7 +18,7 @@
 using namespace forte::literals;
 
 namespace forte::io {
-  DEFINE_FIRMWARE_FB(FORTE_IX, "IX"_STRID)
+  DEFINE_FIRMWARE_FB(FORTE_IX, "eclipse4diac::io::IX"_STRID)
 
   FORTE_IX::FORTE_IX(const StringId paInstanceNameId, CFBContainer &paContainer) :
       CInputFB<CIEC_BOOL>(paContainer, paInstanceNameId) {
