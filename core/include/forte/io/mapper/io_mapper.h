@@ -26,14 +26,23 @@ namespace forte::io {
 
   class IOHandle;
   class IOObserver;
+  struct Mapping;
 
   class IOMapper {
       DECLARE_SINGLETON(IOMapper)
 
     public:
+      struct Mapping {
+          const std::string id;
+          std::vector<IOHandle*> handlers;
+          std::vector<IOObserver* > observers;
+
+      };
+
       enum Direction { UnknownDirection, In, Out, InOut };
 
-      bool registerHandle(std::string const &paId, IOHandle &paHandle);
+      bool registerHandle(Mapping &mapping);
+      bool registerHandle(const std::string &paId, IOHandle &handle);
       void deregisterHandle(IOHandle &paHandle);
       void deregisterHandle(std::string const &paId);
 
@@ -50,6 +59,7 @@ namespace forte::io {
     private:
       typedef std::map<std::string, IOHandle *> THandleMap;
       THandleMap mHandles;
+      std::vector<Mapping> mMapping;
 
       typedef std::map<std::string, IOObserver *> TObserverMap;
       TObserverMap mObservers;

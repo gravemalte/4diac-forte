@@ -26,25 +26,23 @@ namespace forte::io {
 
   IOMapper::~IOMapper() = default;
 
-  bool IOMapper::registerHandle(std::string const &paId, IOHandle &paHandle) {
+  bool IOMapper::registerHandle(const std::string& paId, IOHandle& handle) {
     util::CCriticalRegion criticalRegion(mSyncMutex);
 
-    // Check for duplicates
-    if (mHandles.find(paId) != mHandles.end()) {
-      DEVLOG_WARNING("[IOMapper] Duplicated handle entry '%s'\n", paId.c_str());
-      return false;
+    for (const auto& mMapper : mMapping) {
+      if (mMapper.id == paId) {
+        DEVLOG_WARNING("[IOMapper] Duplicated handle entry '%s'\n", paId.c_str());
+        return false;
+      }
     }
-
-    // Insert into handles list
-    mHandles.insert(std::make_pair(paId, &paHandle));
+    auto mapping = Mapping{paId, std::vector {&handle}, {}};
 
     DEVLOG_DEBUG("[IOMapper] Register handle %s\n", paId.c_str());
 
     // Check for existing observer
     if (mObservers.find(paId) != mObservers.end()) {
-      paHandle.onObserver(mObservers[paId]);
-      mObservers[paId]->onHandle(&paHandle);
-
+      handle.onObserver(mObservers[paId]);
+      mObservers[paId]->onHandle(&handle);
       DEVLOG_INFO("[IOMapper] Connected %s\n", paId.c_str());
     }
 
@@ -61,7 +59,6 @@ namespace forte::io {
           mObservers[it->first]->dropHandle();
           DEVLOG_INFO("[IOMapper]  Disconnected %s (lost handle)\n", it->first.data());
         }
-
         DEVLOG_DEBUG("[IOMapper] Deregister handle %s\n", it->first.data());
 
         mHandles.erase(it);
@@ -89,9 +86,11 @@ namespace forte::io {
   IOHandle *IOMapper::getHandle(std::string const &paId) {
     util::CCriticalRegion criticalRegion(mSyncMutex);
 
-    if (auto handleIt = mHandles.find(paId); handleIt != mHandles.end()) {
-      DEVLOG_DEBUG("[IOMapper] Retrieved handle %s\n", paId.c_str());
-      return handleIt->second;
+    DEVLOG_DEBUG("[IOMapper] Retrieved handle %s\n", paId.c_str());
+    for (auto mMapper : mMapping) {
+      if (mMapper.id == paId) {
+        return mMapper.handlers.at(0);
+      }
     }
     return nullptr;
   }
@@ -124,9 +123,9 @@ namespace forte::io {
   void IOMapper::deregisterObserver(IOObserver *paObserver) {
     util::CCriticalRegion criticalRegion(mSyncMutex);
 
-    for (TObserverMap::iterator it = mObservers.begin(); it != mObservers.end(); ++it) {
+    for (auto it = mObservers.begin(); it != mObservers.end(); ++it) {
       if (it->second == paObserver) {
-        if (mHandles.find(it->first) != mHandles.end()) {
+        if (mHandles.contains(it->first)) {
           mHandles[it->first]->dropObserver();
           paObserver->dropHandle();
           DEVLOG_INFO("[IOMapper]  Disconnected %s (lost observer)\n", it->first.data());

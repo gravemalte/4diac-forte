@@ -58,7 +58,7 @@ namespace forte::io {
   }
 
   void IODeviceController::addHandle(HandleDescriptor &paHandleDescriptor) {
-    std::unique_ptr<IOHandle> handle = std::unique_ptr<IOHandle>(createIOHandle(paHandleDescriptor));
+    auto handle = std::unique_ptr<IOHandle>(createIOHandle(paHandleDescriptor));
 
     if (!handle) {
       DEVLOG_WARNING("[IODeviceController] Failed to initialize handle '%s'. Check initHandle method.\n",
