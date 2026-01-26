@@ -13,13 +13,12 @@
  *   Jonathan Lainer - Add method for deregistering Handles by ID.
  *******************************************************************************/
 
-#ifndef SRC_CORE_IO_MAPPER_MAPPER_H_
-#define SRC_CORE_IO_MAPPER_MAPPER_H_
+#pragma once
+
+#include <string>
+#include <vector>
 
 #include "forte/util/singlet.h"
-#include "forte/datatypes/forte_wstring.h"
-#include <map>
-#include <string>
 #include "forte/arch/forte_sync.h"
 
 namespace forte::io {
@@ -32,16 +31,14 @@ namespace forte::io {
       DECLARE_SINGLETON(IOMapper)
 
     public:
-      struct Mapping {
-          const std::string id;
-          std::vector<IOHandle*> handlers;
-          std::vector<IOObserver* > observers;
-
+      struct IOMapping {
+          std::string id;
+          std::vector<IOHandle *> handlers;
+          std::vector<IOObserver *> observers;
       };
 
       enum Direction { UnknownDirection, In, Out, InOut };
 
-      bool registerHandle(Mapping &mapping);
       bool registerHandle(const std::string &paId, IOHandle &handle);
       void deregisterHandle(IOHandle &paHandle);
       void deregisterHandle(std::string const &paId);
@@ -57,16 +54,9 @@ namespace forte::io {
       void deregisterObserver(IOObserver *paObserver);
 
     private:
-      typedef std::map<std::string, IOHandle *> THandleMap;
-      THandleMap mHandles;
-      std::vector<Mapping> mMapping;
-
-      typedef std::map<std::string, IOObserver *> TObserverMap;
-      TObserverMap mObservers;
+      std::vector<IOMapping> mMapping;
 
       arch::CSyncObject mSyncMutex;
   };
 
 } // namespace forte::io
-
-#endif /* SRC_CORE_IO_MAPPER_MAPPER_H_ */

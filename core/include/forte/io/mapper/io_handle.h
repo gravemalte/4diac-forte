@@ -11,8 +11,7 @@
  *   Jose Cabral - Cleaning of namespaces
  *******************************************************************************/
 
-#ifndef SRC_CORE_IO_MAPPER_HANDLE_H_
-#define SRC_CORE_IO_MAPPER_HANDLE_H_
+#pragma once
 
 #include "forte/datatypes/forte_any.h"
 #include "forte/datatypes/forte_bool.h"
@@ -28,7 +27,7 @@ namespace forte::io {
 
     public:
       IOHandle(IODeviceController *paController, IOMapper::Direction paDirection, CIEC_ANY::EDataTypeID paType);
-      virtual ~IOHandle();
+      virtual ~IOHandle() = default;
 
       bool hasObserver() const {
         return !!mObserver;
@@ -73,5 +72,3 @@ namespace forte::io {
   };
 
 } // namespace forte::io
-
-#endif /* SRC_CORE_IO_MAPPER_HANDLE_H_ */

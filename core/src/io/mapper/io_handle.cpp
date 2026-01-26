@@ -24,8 +24,6 @@ namespace forte::io {
       mObserver(nullptr) {
   }
 
-  IOHandle::~IOHandle() = default;
-
   void IOHandle::onObserver(IOObserver *paObserver) {
     this->mObserver = paObserver;
   }

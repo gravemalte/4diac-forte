@@ -12,11 +12,11 @@
  *   Jose Cabral - Cleaning of namespaces
  *******************************************************************************/
 
-#include "forte/io/device/io_controller.h"
-
 #include "forte/io/processinterfacefb.h"
 #include "forte/io/configFB/io_configFB_controller.h"
+#include "forte/io/device/io_controller.h"
 #include "forte/util/criticalregion.h"
+#include "forte/util/devlog.h"
 
 namespace forte::io {
   IODeviceController::IODeviceController(CDeviceExecution &paDeviceExecution) :
@@ -65,15 +65,15 @@ namespace forte::io {
                      paHandleDescriptor.mId.c_str());
       return;
     }
-    addHandle(paHandleDescriptor.mId, std::move(handle));
+    addHandle(paHandleDescriptor.mId, handle.get());
   }
 
-  void IODeviceController::addHandle(std::string const &paId, std::unique_ptr<IOHandle> paHandle) {
+  void IODeviceController::addHandle(std::string const &paId, IOHandle *paHandle) {
     switch (paHandle->getDirection()) {
-      case IOMapper::In: addHandle(mInputHandles, paId, std::move(paHandle)); break;
-      case IOMapper::Out: addHandle(mOutputHandles, paId, std::move(paHandle)); break;
-      case IOMapper::InOut: addHandle(mDiverseHandles, paId, std::move(paHandle)); break;
-      case IOMapper::UnknownDirection: addHandle(mDiverseHandles, paId, std::move(paHandle)); break;
+      case IOMapper::In: addHandle(mInputHandles, paId, *paHandle); break;
+      case IOMapper::Out: addHandle(mOutputHandles, paId, *paHandle); break;
+      case IOMapper::InOut: addHandle(mDiverseHandles, paId, *paHandle); break;
+      case IOMapper::UnknownDirection: addHandle(mDiverseHandles, paId, *paHandle); break;
       default: break;
     }
   }
@@ -99,8 +99,8 @@ namespace forte::io {
 
     IOMapper &mapper = IOMapper::getInstance();
 
-    auto new_end = std::remove_if(paList.begin(), paList.end(), [&](const std::unique_ptr<IOHandle> &handle) {
-      if (handle.get() == paRawHandle) {
+    auto new_end = std::remove_if(paList.begin(), paList.end(), [&](IOHandle *handle) {
+      if (handle == paRawHandle) {
         mapper.deregisterHandle(*handle);
         return true; // remove
       }
@@ -112,7 +112,7 @@ namespace forte::io {
 
   void IODeviceController::updateHandleList(std::string const &paId, IOHandle *paHandle) {
     auto it = std::find_if(mDiverseHandles.begin(), mDiverseHandles.end(),
-                           [&](const std::unique_ptr<IOHandle> &handle) { return handle.get() == paHandle; });
+                           [&](IOHandle *handle) { return handle == paHandle; });
 
     if (it == mDiverseHandles.end()) {
       DEVLOG_INFO("[updateHandleList] %s's is no member of mDiverseHandles.\r\n", paId.c_str());
@@ -122,14 +122,14 @@ namespace forte::io {
     switch (handleDirection) {
       case IOMapper::In: {
         util::CCriticalRegion criticalRegion(mHandleMutex);
-        mInputHandles.push_back(std::move(*it));
         mDiverseHandles.erase(it);
+        mInputHandles.push_back(std::move(*it));
         break;
       }
       case IOMapper::Out: {
         util::CCriticalRegion criticalRegion(mHandleMutex);
-        mOutputHandles.push_back(std::move(*it));
         mDiverseHandles.erase(it);
+        mOutputHandles.push_back(std::move(*it));
         break;
       }
       default: DEVLOG_ERROR("[updateHandleList] %s's direction is neither `In` nor `Out`.\r\n", paId.c_str()); break;
@@ -210,10 +210,10 @@ namespace forte::io {
     return true;
   }
 
-  void IODeviceController::addHandle(THandleList &paList, std::string const &paId, std::unique_ptr<IOHandle> paHandle) {
-    if (!paId.empty() && IOMapper::getInstance().registerHandle(paId, *paHandle)) {
+  void IODeviceController::addHandle(THandleList &paList, std::string const &paId, IOHandle &paHandle) {
+    if (!paId.empty() && IOMapper::getInstance().registerHandle(paId, paHandle)) {
       util::CCriticalRegion criticalRegion(mHandleMutex);
-      paList.push_back(std::move(paHandle));
+      paList.push_back(&paHandle);
     }
   }
 } // namespace forte::io

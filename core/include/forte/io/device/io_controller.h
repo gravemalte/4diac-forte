@@ -17,7 +17,6 @@
 #include "forte/extevhan.h"
 #include "forte/arch/forte_sync.h"
 #include "forte/arch/forte_thread.h"
-#include "forte/util/devlog.h"
 
 #include "forte/io/mapper/io_handle.h"
 
@@ -159,7 +158,7 @@ namespace forte::io {
        */
       void notifyConfigFB(NotificationType paType, const void *paAttachment = nullptr);
 
-      using THandleList = std::vector<std::unique_ptr<IOHandle>>;
+      using THandleList = std::vector<IOHandle *>;
 
       /*! @brief Adds an IO handle to the controller
        *
@@ -180,7 +179,7 @@ namespace forte::io {
        * @param paId Handler ID
        * @param paHandle Already exisiting handler, which gets added to the correct list.
        */
-      virtual void addHandle(std::string const &paId, std::unique_ptr<IOHandle> paHandle);
+      virtual void addHandle(std::string const &paId, IOHandle *paHandle);
 
       /*! @brief Initializer for all IO handles.
        *
@@ -248,7 +247,7 @@ namespace forte::io {
 
       int mInitDelay;
 
-      void addHandle(THandleList &paList, std::string const &paId, std::unique_ptr<IOHandle> paHandle);
+      void addHandle(THandleList &paList, std::string const &paId, IOHandle &paHandle);
 
       void removeHandle(THandleList &paList, IOHandle *paRawHandle);
 
