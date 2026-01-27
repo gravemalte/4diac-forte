@@ -27,7 +27,7 @@ namespace forte::io {
 
     public:
       IOHandle(IODeviceController *paController, IOMapper::Direction paDirection, CIEC_ANY::EDataTypeID paType);
-      virtual ~IOHandle() = default;
+      virtual ~IOHandle();
 
       bool hasObserver() const {
         return !!mObserver;

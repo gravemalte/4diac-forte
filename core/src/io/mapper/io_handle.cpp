@@ -24,6 +24,10 @@ namespace forte::io {
       mObserver(nullptr) {
   }
 
+  IOHandle::~IOHandle() {
+    IOMapper::getInstance().deregisterHandle(*this);
+  }
+
   void IOHandle::onObserver(IOObserver *paObserver) {
     this->mObserver = paObserver;
   }
