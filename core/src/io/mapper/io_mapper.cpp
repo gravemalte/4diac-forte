@@ -96,15 +96,20 @@ namespace forte::io {
     });
   }
 
+  // TODO: getHandle is currently only able to retun the first handler in the handler list
   IOHandle *IOMapper::getHandle(std::string const &paId) {
     util::CCriticalRegion criticalRegion(mSyncMutex);
-
-    DEVLOG_DEBUG("[IOMapper] Retrieved handle %s\n", paId.c_str());
-    for (auto mMapper : mMapping) {
-      if (mMapper.id == paId) {
-        return mMapper.handlers.at(0);
+    for (auto const &mapper : mMapping) {
+      if (mapper.id == paId) {
+        if (!mapper.handlers.empty()) {
+          DEVLOG_DEBUG("[IOMapper] Retrieved handle %s\n", paId.c_str());
+          return mapper.handlers.front();
+        }
+        break;
       }
     }
+
+    DEVLOG_WARNING("[IOMapper] No handle found for ID %s\n", paId.c_str());
     return nullptr;
   }
 
