@@ -15,6 +15,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -39,7 +40,7 @@ namespace forte::io {
 
       enum Direction { UnknownDirection, In, Out, InOut };
 
-      bool registerHandle(const std::string &paId, IOHandle &handle);
+      bool registerHandle(const std::string &paId, IOHandle *handle);
       void deregisterHandle(IOHandle &paHandle);
       void deregisterHandle(std::string const &paId);
 

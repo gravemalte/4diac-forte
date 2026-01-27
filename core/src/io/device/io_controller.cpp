@@ -65,15 +65,15 @@ namespace forte::io {
                      paHandleDescriptor.mId.c_str());
       return;
     }
-    addHandle(paHandleDescriptor.mId, handle.get());
+    addHandle(paHandleDescriptor.mId, std::move(handle));
   }
 
-  void IODeviceController::addHandle(std::string const &paId, IOHandle *paHandle) {
+  void IODeviceController::addHandle(std::string const &paId, std::unique_ptr<IOHandle> paHandle) {
     switch (paHandle->getDirection()) {
-      case IOMapper::In: addHandle(mInputHandles, paId, *paHandle); break;
-      case IOMapper::Out: addHandle(mOutputHandles, paId, *paHandle); break;
-      case IOMapper::InOut: addHandle(mDiverseHandles, paId, *paHandle); break;
-      case IOMapper::UnknownDirection: addHandle(mDiverseHandles, paId, *paHandle); break;
+      case IOMapper::In: addHandle(mInputHandles, paId, std::move(paHandle)); break;
+      case IOMapper::Out: addHandle(mOutputHandles, paId, std::move(paHandle)); break;
+      case IOMapper::InOut: addHandle(mDiverseHandles, paId, std::move(paHandle)); break;
+      case IOMapper::UnknownDirection: addHandle(mDiverseHandles, paId, std::move(paHandle)); break;
       default: break;
     }
   }
@@ -99,8 +99,8 @@ namespace forte::io {
 
     IOMapper &mapper = IOMapper::getInstance();
 
-    auto new_end = std::remove_if(paList.begin(), paList.end(), [&](IOHandle *handle) {
-      if (handle == paRawHandle) {
+    auto new_end = std::remove_if(paList.begin(), paList.end(), [&](const std::unique_ptr<IOHandle> &handle) {
+      if (handle.get() == paRawHandle) {
         mapper.deregisterHandle(*handle);
         return true; // remove
       }
@@ -112,7 +112,7 @@ namespace forte::io {
 
   void IODeviceController::updateHandleList(std::string const &paId, IOHandle *paHandle) {
     auto it = std::find_if(mDiverseHandles.begin(), mDiverseHandles.end(),
-                           [&](IOHandle *handle) { return handle == paHandle; });
+                           [&](const std::unique_ptr<IOHandle> &handle) { return handle.get() == paHandle; });
 
     if (it == mDiverseHandles.end()) {
       DEVLOG_INFO("[updateHandleList] %s's is no member of mDiverseHandles.\r\n", paId.c_str());
@@ -210,10 +210,10 @@ namespace forte::io {
     return true;
   }
 
-  void IODeviceController::addHandle(THandleList &paList, std::string const &paId, IOHandle &paHandle) {
-    if (!paId.empty() && IOMapper::getInstance().registerHandle(paId, paHandle)) {
+  void IODeviceController::addHandle(THandleList &paList, std::string const &paId, std::unique_ptr<IOHandle> paHandle) {
+    if (!paId.empty() && IOMapper::getInstance().registerHandle(paId, paHandle.get())) {
       util::CCriticalRegion criticalRegion(mHandleMutex);
-      paList.push_back(&paHandle);
+      paList.push_back(std::move(paHandle));
     }
   }
 } // namespace forte::io

@@ -28,20 +28,20 @@ namespace forte::io {
 
   IOMapper::~IOMapper() = default;
 
-  bool IOMapper::registerHandle(const std::string &paId, IOHandle &handle) {
+  bool IOMapper::registerHandle(const std::string &paId, IOHandle *handle) {
     util::CCriticalRegion criticalRegion(mSyncMutex);
 
     auto it = std::find_if(mMapping.begin(), mMapping.end(), [&](const IOMapping &m) { return m.id == paId; });
 
     if (it != mMapping.end()) {
       auto &hVec = it->handlers;
-      if (std::find(hVec.begin(), hVec.end(), &handle) != hVec.end()) {
+      if (std::find(hVec.begin(), hVec.end(), handle) != hVec.end()) {
         DEVLOG_WARNING("[IOMapper] Duplicated handle entry '%s'\n", paId.c_str());
         return false;
       }
-      hVec.push_back(&handle);
+      hVec.push_back(handle);
     } else {
-      mMapping.push_back(IOMapping{paId, {&handle}, {}});
+      mMapping.push_back(IOMapping{paId, {handle}, {}});
       it = std::prev(mMapping.end());
     }
 
@@ -49,8 +49,8 @@ namespace forte::io {
 
     if (!it->observers.empty()) {
       IOObserver *observer = it->observers.front();
-      handle.onObserver(observer);
-      observer->onHandle(&handle);
+      handle->onObserver(observer);
+      observer->onHandle(handle);
       DEVLOG_INFO("[IOMapper] Connected %s\n", paId.c_str());
     }
 

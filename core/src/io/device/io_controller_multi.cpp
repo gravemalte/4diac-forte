@@ -28,7 +28,7 @@ namespace forte::io {
       return;
     }
 
-    if (IOMapper::getInstance().registerHandle(desc.mId, *handle)) {
+    if (IOMapper::getInstance().registerHandle(desc.mId, handle.get())) {
       addSlaveHandle(desc.mSlaveIndex, std::move(handle));
     }
   }
