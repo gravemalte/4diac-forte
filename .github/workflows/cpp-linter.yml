@@ -1,10 +1,10 @@
 name: cpp-linter
 on:
   pull_request:
-    branches: [ "release", "develop", "freeze", "feature/**", "3.0.x" ]
+    branches: [ "**" ]
     paths: [ "**.c", "**.cpp", "**.h", "**.hpp", "**.cxx", "**.hxx", "**.cc", "**.hh", ".clang-format", ".clang-format-ignore" ]
   push:
-    branches: [ "release", "develop", "freeze", "feature/**", "3.0.x" ]
+    branches: [ "**" ]
     paths: [ "**.c", "**.cpp", "**.h", "**.hpp", "**.cxx", "**.hxx", "**.cc", "**.hh", ".clang-format", ".clang-format-ignore" ]
 
 permissions:
@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: cpp-linter/cpp-linter-action@v2.16.6
+      - uses: cpp-linter/cpp-linter-action@v2.16.7
         id: linter
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
