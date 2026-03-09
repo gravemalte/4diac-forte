@@ -88,30 +88,21 @@ namespace forte::com_infra::opc_ua {
                    getCommFB()->getInstanceName(), scmNumberOfAlarmParameters, nrOfParams);
       return eRetVal;
     }
-    bool isPublisher;
-    switch (mFb->getComServiceType()) {
-      case e_Publisher: isPublisher = true; break;
-      case e_Subscriber: isPublisher = false; break;
-      default:
-        DEVLOG_ERROR("[OPC UA A&C LAYER]: Wrong CommFB used for FB %s! Expected: Publish/Subscribe\n",
-                     getCommFB()->getInstanceName());
-        return eRetVal;
-    }
-    if (!checkFirstDataPinType()) {
-      DEVLOG_ERROR("[OPC UA A&C Layer]: First Input of FB %s must be of type BOOL!\n",
-                   getCommFB()->getParent().getInstanceName());
+    if (!checkDataPorts()) {
+      DEVLOG_ERROR("[OPC UA A&C Layer]: FB %s does not match specification needed for using OPC UA A&C!\n",
+                   getCommFB()->getInstanceName());
       return eRetVal;
     }
     mHandler = static_cast<COPC_UA_HandlerAbstract *>(&getExtEvHandler<COPC_UA_Local_Handler>());
     COPC_UA_Local_Handler *localHandler = static_cast<COPC_UA_Local_Handler *>(mHandler);
     localHandler->enableHandler();
     UA_Server *server = localHandler->getUAServer();
-    if (initOPCUAType(server, parser[TypeName], isPublisher) != e_InitOk) {
+    if (initOPCUAType(server, parser[TypeName]) != e_InitOk) {
       DEVLOG_ERROR("[OPC UA A&C LAYER]: Initializing Alarm Type for FB %s failed!\n", getCommFB()->getInstanceName());
       return eRetVal;
     }
     std::string instancePath(parser[PathToInstance] ? parser[PathToInstance] : smEmptyString);
-    eRetVal = createOPCUAObject(server, instancePath, isPublisher);
+    eRetVal = createOPCUAObject(server, instancePath);
     if (eRetVal == e_InitOk) {
       initializeRDBuffer();
     }
@@ -137,8 +128,11 @@ namespace forte::com_infra::opc_ua {
   }
 
   EComResponse COPC_UA_AC_Layer::sendData(void *, unsigned int) {
+    COPC_UA_Local_Handler *localHandler = static_cast<COPC_UA_Local_Handler *>(mHandler);
+    UA_Server *server = localHandler->getUAServer();
     bool activate = getTriggerValue();
     if ((mIsStateActive && activate) || (!mIsStateActive && !activate)) {
+      readAlarmStateValues(server);
       return e_ProcessDataOk;
     }
     if (mMemberActionInfo) {
@@ -147,10 +141,11 @@ namespace forte::com_infra::opc_ua {
         return e_ProcessDataSendFailed;
       }
     }
-    if (triggerAlarm(activate) != UA_STATUSCODE_GOOD) {
+    if (triggerAlarm(server, activate) != UA_STATUSCODE_GOOD) {
       DEVLOG_ERROR("[OPC UA A&C LAYER]: Sending Alarm Data failed for FB %s!\n", getCommFB()->getInstanceName());
       return e_ProcessDataSendFailed;
     }
+    readAlarmStateValues(server);
     return e_ProcessDataOk;
   }
 
@@ -168,29 +163,28 @@ namespace forte::com_infra::opc_ua {
     }
   }
 
-  UA_StatusCode COPC_UA_AC_Layer::triggerAlarm(bool paActivate) {
-    COPC_UA_Local_Handler *localHandler = static_cast<COPC_UA_Local_Handler *>(mHandler);
-    UA_Server *server = localHandler->getUAServer();
+  UA_StatusCode COPC_UA_AC_Layer::triggerAlarm(UA_Server *paServer, bool paActivate) {
     UA_StatusCode status = UA_STATUSCODE_GOOD;
     UA_Boolean activeState = paActivate;
     if (paActivate) {
-      status |= resetAckedState(server);
+      status |= resetAckedState(paServer);
       if (!mHasSeverityProperty) {
         UA_UInt16 *severityValue = &smSeverityValue;
-        status |= setConditionField(server, UA_QUALIFIEDNAME(0, smSeverity), severityValue, &UA_TYPES[UA_TYPES_UINT16]);
+        status |=
+            setConditionField(paServer, UA_QUALIFIEDNAME(0, smSeverity), severityValue, &UA_TYPES[UA_TYPES_UINT16]);
       }
       if (mMessageTextPortIndex >= 0) {
         CIEC_STRING &messagePort = static_cast<CIEC_STRING &>(getCommFB()->getDI(mMessageTextPortIndex)->unwrap());
         UA_LocalizedText messageValue = UA_LOCALIZEDTEXT(smEmptyString, getNameFromString(messagePort.c_str()));
-        status |=
-            setConditionField(server, UA_QUALIFIEDNAME(0, smMessage), &messageValue, &UA_TYPES[UA_TYPES_LOCALIZEDTEXT]);
+        status |= setConditionField(paServer, UA_QUALIFIEDNAME(0, smMessage), &messageValue,
+                                    &UA_TYPES[UA_TYPES_LOCALIZEDTEXT]);
       }
       UA_Boolean retainValue = true;
-      status |= setConditionField(server, UA_QUALIFIEDNAME(0, smRetain), &retainValue, &UA_TYPES[UA_TYPES_BOOLEAN]);
-      status |= setConditionVariableFieldProperty(server, UA_QUALIFIEDNAME(0, smActiveState), &activeState,
+      status |= setConditionField(paServer, UA_QUALIFIEDNAME(0, smRetain), &retainValue, &UA_TYPES[UA_TYPES_BOOLEAN]);
+      status |= setConditionVariableFieldProperty(paServer, UA_QUALIFIEDNAME(0, smActiveState), &activeState,
                                                   &UA_TYPES[UA_TYPES_BOOLEAN]);
       UA_DateTime alarmTime = UA_DateTime_now();
-      status |= UA_Server_writeObjectProperty_scalar(server, mConditionInstanceId, UA_QUALIFIEDNAME(0, smTime),
+      status |= UA_Server_writeObjectProperty_scalar(paServer, mConditionInstanceId, UA_QUALIFIEDNAME(0, smTime),
                                                      &alarmTime, &UA_TYPES[UA_TYPES_DATETIME]);
 
       if (status != UA_STATUSCODE_GOOD) {
@@ -200,13 +194,13 @@ namespace forte::com_infra::opc_ua {
       }
       mIsStateActive = true;
     } else {
-      status |= setConditionVariableFieldProperty(server, UA_QUALIFIEDNAME(0, smActiveState), &activeState,
+      status |= setConditionVariableFieldProperty(paServer, UA_QUALIFIEDNAME(0, smActiveState), &activeState,
                                                   &UA_TYPES[UA_TYPES_BOOLEAN]);
       /* Alarm time needs to be set prior to triggering condition. Otherwise time is not displayed correctly */
       UA_DateTime alarmTime = UA_DateTime_now();
-      status |= UA_Server_writeObjectProperty_scalar(server, mConditionInstanceId, UA_QUALIFIEDNAME(0, smTime),
+      status |= UA_Server_writeObjectProperty_scalar(paServer, mConditionInstanceId, UA_QUALIFIEDNAME(0, smTime),
                                                      &alarmTime, &UA_TYPES[UA_TYPES_DATETIME]);
-      status |= UA_Server_triggerConditionEvent(server, mConditionInstanceId, mConditionSourceId, nullptr);
+      status |= UA_Server_triggerConditionEvent(paServer, mConditionInstanceId, mConditionSourceId, nullptr);
       if (status != UA_STATUSCODE_GOOD) {
         DEVLOG_ERROR("[OPC UA A&C LAYER]: Resetting Alarm failed for FB %s, StatusCode: %s\n",
                      getCommFB()->getInstanceName(), UA_StatusCode_name(status));
@@ -242,27 +236,20 @@ namespace forte::com_infra::opc_ua {
                                                        UA_QUALIFIEDNAME(0, smId));
   }
 
-  EComResponse COPC_UA_AC_Layer::initOPCUAType(UA_Server *paServer, const std::string &paTypeName, bool paIsPublisher) {
-    if (!paIsPublisher && !checkFBOutputNames()) {
-      return e_InitTerminated;
-    }
+  EComResponse COPC_UA_AC_Layer::initOPCUAType(UA_Server *paServer, const std::string &paTypeName) {
     std::string browsePath(COPC_UA_ObjectStruct_Helper::getBrowsePath(scmAlarmTypeBrowsePath, paTypeName,
                                                                       1)); // TODO Change 1 to namespaceIndex
     if (isOPCUAObjectPresent(browsePath, &mTypeNodeId)) {
-      if (paIsPublisher && !isFullyInitialized(paTypeName)) {
-        return addOPCUATypeProperties(paServer, paTypeName);
-      }
       return e_InitOk;
     }
     EComResponse eRetVal = createAlarmType(paServer, paTypeName);
-    if (eRetVal == e_InitOk && paIsPublisher) {
+    if (eRetVal == e_InitOk) {
       eRetVal = addOPCUATypeProperties(paServer, paTypeName);
     }
     return eRetVal;
   }
 
-  EComResponse
-  COPC_UA_AC_Layer::createOPCUAObject(UA_Server *paServer, const std::string &paPathToInstance, bool paIsPublisher) {
+  EComResponse COPC_UA_AC_Layer::createOPCUAObject(UA_Server *paServer, const std::string &paPathToInstance) {
     std::string objectBrowsePath;
     if (createOPCUAObjectNode(paServer, paPathToInstance, objectBrowsePath) != UA_STATUSCODE_GOOD) {
       return e_InitTerminated;
@@ -270,27 +257,16 @@ namespace forte::com_infra::opc_ua {
     std::string conditionBrowsePath =
         COPC_UA_ObjectStruct_Helper::getMemberBrowsePath(objectBrowsePath, scmAlarmConditionName);
     if (isOPCUAObjectPresent(conditionBrowsePath, &mConditionInstanceId)) {
-      if (paIsPublisher) {
-        if (initializeMapping() != UA_STATUSCODE_GOOD) {
-          return e_InitTerminated;
-        }
-        if (initializeMemberActions(conditionBrowsePath) != e_InitOk) {
-          return e_InitTerminated;
-        }
-      }
       return e_InitOk;
     }
-
     if (addOPCUACondition(paServer, conditionBrowsePath) != UA_STATUSCODE_GOOD) {
       return e_InitTerminated;
     }
-    if (paIsPublisher) {
-      if (initializeMapping() != UA_STATUSCODE_GOOD) {
-        return e_InitTerminated;
-      }
-      if (initializeMemberActions(conditionBrowsePath) != e_InitOk) {
-        return e_InitTerminated;
-      }
+    if (initializeMapping() != UA_STATUSCODE_GOOD) {
+      return e_InitTerminated;
+    }
+    if (initializeMemberActions(conditionBrowsePath) != e_InitOk) {
+      return e_InitTerminated;
     }
     return setConditionCallbacks(paServer);
   }
@@ -302,7 +278,7 @@ namespace forte::com_infra::opc_ua {
       DEVLOG_ERROR("[OPC UA A&C LAYER]: Browsepath is invalid!");
       return UA_STATUSCODE_BAD;
     }
-    std::string instanceNameStr{getCommFB()->getParent().getInstanceName()};
+    std::string instanceNameStr{getCommFB()->getInstanceName()};
     if (instanceNameStr.empty()) {
       DEVLOG_ERROR("[OPC UA A&C LAYER]: Retrieving FB Instance Name failed!");
       return UA_STATUSCODE_BAD;
@@ -356,9 +332,9 @@ namespace forte::com_infra::opc_ua {
     char *conditionName = getNameFromString(scmAlarmConditionName);
     char *conditionBrowsePath = getNameFromString(paBrowsePath);
     mConditionInstanceId = UA_NODEID_STRING(1, conditionBrowsePath); // TODO Change 1 to namespaceIndex
-    UA_StatusCode status = UA_Server_createConditionWithContext(
+    UA_StatusCode status = UA_Server_createCondition(
         paServer, mConditionInstanceId, mTypeNodeId, UA_QUALIFIEDNAME(1, conditionName), mConditionSourceId,
-        UA_NODEID_NUMERIC(0, UA_NS0ID_HASCOMPONENT), this, &mConditionInstanceId);
+        UA_NODEID_NUMERIC(0, UA_NS0ID_HASCOMPONENT), &mConditionInstanceId);
     if (status != UA_STATUSCODE_GOOD) {
       DEVLOG_ERROR("[OPC UA A&C LAYER]: Adding Condition failed for FB %s. StatusCode %s\n",
                    getCommFB()->getInstanceName(), UA_StatusCode_name(status));
@@ -385,14 +361,20 @@ namespace forte::com_infra::opc_ua {
     for (size_t i = 0; i < result.referencesSize; i++) {
       UA_ReferenceDescription *ref = &result.references[i];
       std::string browseName((const char *) ref->browseName.name.data, ref->browseName.name.length);
+
       if (mUAPropertyMap.find(browseName) != mUAPropertyMap.end()) {
-        mUAPropertyMap[browseName] = ref->nodeId.nodeId;
+        UA_NodeId browsedNodeId = ref->nodeId.nodeId;
+        if (browseName == smActiveState || browseName == smAckedState) {
+          mUAPropertyMap[browseName] = browseTwoStateVariable(browsedNodeId);
+        } else {
+          mUAPropertyMap[browseName] = browsedNodeId;
+        }
         foundProperties++;
       }
     }
     UA_BrowseResult_clear(&result);
     if (foundProperties != mUAPropertyMap.size()) {
-      DEVLOG_ERROR("[OPC UA A&C LAYER]: Number of found Input properties does not match number of properties to be "
+      DEVLOG_ERROR("[OPC UA A&C LAYER]: Number of found properties does not match number of properties to be "
                    "mapped. Expected: %d, Actual: %d\n",
                    mUAPropertyMap.size(), foundProperties);
       return UA_STATUSCODE_BADNODEIDUNKNOWN;
@@ -411,8 +393,41 @@ namespace forte::com_infra::opc_ua {
     return localHandler->browseServer(nodesToBrowse);
   }
 
+  UA_NodeId COPC_UA_AC_Layer::browseTwoStateVariable(UA_NodeId &paTwoStateNodeId) {
+    UA_NodeId nodeId = UA_NODEID_NULL;
+    UA_BrowseResult result = browseNode(paTwoStateNodeId);
+    for (size_t i = 0; i < result.referencesSize; i++) {
+      UA_ReferenceDescription *twoStateRef = &result.references[i];
+      std::string twoStateBrowseName{(const char *) twoStateRef->browseName.name.data,
+                                     twoStateRef->browseName.name.length};
+      if (twoStateBrowseName == smId) {
+        UA_NodeId_copy(&twoStateRef->nodeId.nodeId, &nodeId);
+        break;
+      }
+    }
+    UA_BrowseResult_clear(&result);
+    return nodeId;
+  }
+
+  void COPC_UA_AC_Layer::readAlarmStateValues(UA_Server *paServer) {
+    UA_Variant activeStateVal;
+    UA_StatusCode status = UA_Server_readValue(paServer, mUAPropertyMap[smActiveState], &activeStateVal);
+    if (status == UA_STATUSCODE_GOOD && UA_Variant_hasScalarType(&activeStateVal, &UA_TYPES[UA_TYPES_BOOLEAN])) {
+      UA_Boolean isActive = *(UA_Boolean *) activeStateVal.data;
+      getCommFB()->getRDs()[mFBOutputMap[smActive]]->setValue(isActive ? true_BOOL : false_BOOL);
+    }
+    UA_Variant ackedStateVal;
+    status = UA_Server_readValue(paServer, mUAPropertyMap[smAckedState], &ackedStateVal);
+    if (status == UA_STATUSCODE_GOOD && UA_Variant_hasScalarType(&ackedStateVal, &UA_TYPES[UA_TYPES_BOOLEAN])) {
+      UA_Boolean isAcked = *(UA_Boolean *) ackedStateVal.data;
+      getCommFB()->getRDs()[mFBOutputMap[smAcked]]->setValue(isAcked ? true_BOOL : false_BOOL);
+    }
+    UA_Variant_clear(&activeStateVal);
+    UA_Variant_clear(&ackedStateVal);
+  }
+
   bool COPC_UA_AC_Layer::checkFBOutputNames() {
-    const SFBInterfaceSpec &interfaceSpec = getParentInterfaceSpec();
+    const SFBInterfaceSpec &interfaceSpec = getCommFB()->getFBInterfaceSpec();
     std::span<const StringId> portNameIds = interfaceSpec.mDONames;
     size_t foundProperties = 0;
     for (TPortId portId = 0; portId < interfaceSpec.getNumDOs(); portId++) {
@@ -423,33 +438,27 @@ namespace forte::com_infra::opc_ua {
       }
     }
     if (foundProperties != mFBOutputMap.size()) {
-      DEVLOG_ERROR("[OPC UA A&C LAYER]: Missing FB Output Ports %s / %s! Expected: %d, Actual: %d\n", smActive, smAcked,
+      DEVLOG_ERROR("[OPC UA A&C LAYER]: Missing FB Output Ports %s / %s! Expected: %d, Found: %d\n", smActive, smAcked,
                    mFBOutputMap.size(), foundProperties);
       return false;
     }
     return true;
   }
 
-  bool COPC_UA_AC_Layer::isFullyInitialized(const std::string &paTypeName) {
-    bool retVal = false;
-    UA_BrowseResult result = browseNode(mTypeNodeId);
-    std::string variableName{getParentInterfaceSpec().mDINames[smFirstDataIndex].data()};
-    std::string memberBrowsePath{COPC_UA_ObjectStruct_Helper::getMemberBrowsePath(paTypeName, variableName)};
-    for (size_t i = 0; i < result.referencesSize; i++) {
-      UA_ReferenceDescription *ref = &result.references[i];
-      std::string browseName((const char *) ref->browseName.name.data, ref->browseName.name.length);
-      if (browseName == memberBrowsePath) {
-        retVal = true;
-        break;
-      }
+  bool COPC_UA_AC_Layer::checkDataPorts() {
+    bool retVal = true;
+    if (!checkFirstDataInputType()) {
+      retVal = false;
+      DEVLOG_ERROR("[OPC UA A&C Layer]: First Input of FB %s must be of type BOOL!\n", getCommFB()->getInstanceName());
     }
-    UA_BrowseResult_clear(&result);
+    if (!checkFBOutputNames()) {
+      retVal = false;
+    }
     return retVal;
   }
 
-  bool COPC_UA_AC_Layer::checkFirstDataPinType() {
-    CFunctionBlock &parent = static_cast<CFunctionBlock &>(getCommFB()->getParent());
-    return parent.getDI(0)->getDataTypeID() == CIEC_ANY::e_BOOL;
+  bool COPC_UA_AC_Layer::checkFirstDataInputType() {
+    return getCommFB()->getNumSD() > 0 && getCommFB()->getSDs()[0]->unwrap().getDataTypeID() == CIEC_ANY::e_BOOL;
   }
 
   bool COPC_UA_AC_Layer::getTriggerValue() {
@@ -479,7 +488,7 @@ namespace forte::com_infra::opc_ua {
     mMemberActionInfo.reset(
         new CAlarmActionInfo(*this, CActionInfo::UA_ActionType::eWrite, std::string(), smFirstDataIndex));
     size_t numPorts = getCommFB()->getNumSD();
-    const std::span<const StringId> dataPortNameIds = getParentInterfaceSpec().mDINames;
+    const std::span<const StringId> dataPortNameIds = getCommFB()->getFBInterfaceSpec().mDINames;
     for (size_t i = smFirstDataIndex; i < numPorts; i++) {
       std::string dataPortName{dataPortNameIds[i].data()};
       auto propertyKeyIt = sm1499ToUAMap.find(dataPortName);
@@ -499,11 +508,11 @@ namespace forte::com_infra::opc_ua {
       }
     }
     if (!mHasSeverityProperty) {
-      DEVLOG_INFO("[OPC UA A&C LAYER]: No Data Port \"%s\" defined for FB %s. Using default value instead.", smSeverity,
-                  getCommFB()->getInstanceName());
+      DEVLOG_INFO("[OPC UA A&C LAYER]: No Data Port \"%s\" defined for FB %s. Using default value instead.\n",
+                  smSeverity, getCommFB()->getInstanceName());
     }
     if (mMessageTextPortIndex == -1) {
-      DEVLOG_INFO("[OPC UA A&C LAYER]: No Data Port \"%s\" defined for FB %s. Using default value instead.",
+      DEVLOG_INFO("[OPC UA A&C LAYER]: No Data Port \"%s\" defined for FB %s. Using default value instead.\n",
                   smMessageText, getCommFB()->getInstanceName());
     }
     if (mHandler->initializeAction(*mMemberActionInfo) != UA_STATUSCODE_GOOD) {
@@ -542,7 +551,7 @@ namespace forte::com_infra::opc_ua {
   EComResponse COPC_UA_AC_Layer::addOPCUATypeProperties(UA_Server *paServer, const std::string &paTypeName) {
     CIEC_ANY **apoDataPorts = getCommFB()->getSDs();
     size_t numDataPorts = getCommFB()->getNumSD();
-    const std::span<const StringId> dataPortNameIds = getParentInterfaceSpec().mDINames;
+    const std::span<const StringId> dataPortNameIds = getCommFB()->getFBInterfaceSpec().mDINames;
     for (size_t i = smFirstDataIndex; i < numDataPorts; i++) {
       std::string dataPortName{dataPortNameIds[i].data()};
       char *propertyName = getNameFromString(dataPortName);
@@ -618,11 +627,6 @@ namespace forte::com_infra::opc_ua {
     return false;
   }
 
-  const SFBInterfaceSpec &COPC_UA_AC_Layer::getParentInterfaceSpec() {
-    CFunctionBlock &parent = static_cast<CFunctionBlock &>(getCommFB()->getParent());
-    return parent.getFBInterfaceSpec();
-  }
-
   char *COPC_UA_AC_Layer::getNameFromString(const std::string &paName) {
     size_t length = paName.length();
     char *name = new char[length + 1];
@@ -643,16 +647,6 @@ namespace forte::com_infra::opc_ua {
   }
 
   UA_StatusCode COPC_UA_AC_Layer::onActive(UA_Server *server, const UA_NodeId *condition) {
-    COPC_UA_AC_Layer *layer = nullptr;
-    UA_Server_getNodeContext(server, *condition, (void **) &layer);
-    COPC_UA_Local_Handler *localHandler = static_cast<COPC_UA_Local_Handler *>(layer->mHandler);
-    if (layer->getCommFB()->getComServiceType() == e_Subscriber) {
-      const CIEC_BOOL &value = layer->mIsStateActive ? false_BOOL : true_BOOL;
-      std::pair<TPortId, const CIEC_BOOL> data = std::make_pair(layer->mFBOutputMap[smActive], value);
-      localHandler->onAlarmStateChanged(static_cast<const void *>(&data), 0, layer);
-    }
-    layer->mIsStateActive = !layer->mIsStateActive;
-
     UA_DateTime dateTime = UA_DateTime_now();
     UA_StatusCode status = UA_Server_writeObjectProperty_scalar(server, *condition, UA_QUALIFIEDNAME(0, smTime),
                                                                 &dateTime, &UA_TYPES[UA_TYPES_DATETIME]);
@@ -663,15 +657,6 @@ namespace forte::com_infra::opc_ua {
   }
 
   UA_StatusCode COPC_UA_AC_Layer::onAcknowledged(UA_Server *server, const UA_NodeId *condition) {
-    COPC_UA_AC_Layer *layer = nullptr;
-    UA_Server_getNodeContext(server, *condition, (void **) &layer);
-    COPC_UA_Local_Handler *localHandler = static_cast<COPC_UA_Local_Handler *>(layer->mHandler);
-    if (layer->getCommFB()->getComServiceType() == e_Subscriber) {
-      const CIEC_BOOL &value = layer->mIsStateAcked ? false_BOOL : true_BOOL;
-      std::pair<TPortId, const CIEC_BOOL> data = std::make_pair(layer->mFBOutputMap[smAcked], value);
-      localHandler->onAlarmStateChanged(static_cast<const void *>(&data), 0, layer);
-    }
-    layer->mIsStateAcked = !layer->mIsStateAcked;
     UA_DateTime dateTime = UA_DateTime_now();
     UA_StatusCode status = UA_Server_writeObjectProperty_scalar(server, *condition, UA_QUALIFIEDNAME(0, smTime),
                                                                 &dateTime, &UA_TYPES[UA_TYPES_DATETIME]);

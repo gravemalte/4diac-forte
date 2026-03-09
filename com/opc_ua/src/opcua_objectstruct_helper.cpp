@@ -25,11 +25,99 @@ using namespace forte::literals;
 #include "forte/util/string_utils.h"
 
 namespace forte::com_infra::opc_ua {
-  const std::string COPC_UA_ObjectStruct_Helper::smStructTypesBrowsePath = "/Types/0:ObjectTypes/0:BaseObjectType/%d:";
+  namespace {
+    constexpr std::string_view smStructTypesBrowsePath = "/Types/0:ObjectTypes/0:BaseObjectType/%d:";
+    constexpr std::string_view smMemberNamespaceIndex = "/%d:";
+    constexpr std::string_view smSequenceToReplace{"::"};
+    constexpr std::string_view smSequenceReplaced{"__"};
+    char smEmptyString[] = "";
 
-  const std::string COPC_UA_ObjectStruct_Helper::smMemberNamespaceIndex = "/%d:";
+    /**
+     * Replaces sequences of the Struct name in-place with a specified value if these sequences are present.
+     * @param paStructName The original struct name, which will be overwritten
+     * @param paFrom The sequence that should be replaced
+     * @param paTo The new sequence
+     */
+    void
+    replaceStructNameElements(std::string &paStructName, const std::string_view paFrom, const std::string_view paTo) {
+      size_t index = 0;
+      index = paStructName.find(paFrom, index);
+      while (index != std::string::npos) {
+        paStructName.replace(index, paFrom.length(), paTo);
+        index += paTo.length();
+        index = paStructName.find(paFrom, index);
+      }
+    }
 
-  char COPC_UA_ObjectStruct_Helper::smEmptyString[] = "";
+    /**
+     * Returns the namespace index of the Object Struct Instance from the given browsepath
+     * @param paBrowsePath The browsepath of the Object Struct
+     * @return The namespace index of the Object Struct
+     */
+    UA_UInt16 getNamespaceIndexFromBrowsepath(const std::string_view paBrowsePath) {
+      util::CParameterParser mainParser(paBrowsePath.data(), '/');
+      size_t parsingResult = mainParser.parseParameters();
+      if (parsingResult > 0) {
+        size_t elementNameIndex =
+            strcmp("", mainParser[parsingResult - 1]) != 0 ? parsingResult - 1 : parsingResult - 2;
+        std::string objectName(mainParser[elementNameIndex]);
+        util::CParameterParser nsIndexParser(objectName.c_str(), ':');
+        parsingResult = nsIndexParser.parseParameters();
+        if (parsingResult > 1) {
+          return static_cast<UA_UInt16>(util::strtoul(nsIndexParser[0], nullptr, 10));
+        }
+      } else {
+        DEVLOG_ERROR("[OPC UA HELPER]: Error while parsing FB browse path %s\n", paBrowsePath.data());
+      }
+      return COPC_UA_Local_Handler::scmDefaultBrowsenameNameSpace;
+    }
+
+    /**
+     * Removes any present namespace indices from the browsepath.
+     * @param paBrowsePath The browsepath of the Object Struct
+     * @return The browsepath without any namespace indices
+     */
+    std::string removeNamespaceIndicesFromBrowsePath(const std::string_view paBrowsePath) {
+      std::stringstream ss;
+      util::CParameterParser mainParser(paBrowsePath.data(), '/');
+      size_t mainParserLength = mainParser.parseParameters();
+      for (size_t i = 0; i < mainParserLength; i++) {
+        std::string nodePair(mainParser[i]);
+        if (!nodePair.empty()) {
+          util::CParameterParser nsIndexParser(nodePair.c_str(), ':');
+          size_t parserLength = nsIndexParser.parseParameters();
+          size_t browsePathIndex = parserLength > 1 ? 1 : 0;
+          ss << '/' << nsIndexParser[browsePathIndex];
+        }
+      }
+      return ss.str();
+    }
+
+    /**
+     * Returns the browsepath for Object Struct Types
+     * @param paStructTypeID The Struct Type ID
+     * @param paNameSpaceIndex The namespace index
+     * @return The browsepath of the Object Struct Type
+     */
+    std::string getTypeBrowsePath(StringId paStructTypeID, UA_UInt16 paNameSpaceIndex) {
+      std::string typeName{std::string(paStructTypeID)};
+      replaceStructNameElements(typeName, smSequenceToReplace, smSequenceReplaced);
+      return COPC_UA_ObjectStruct_Helper::getBrowsePath(smStructTypesBrowsePath, typeName, paNameSpaceIndex);
+    }
+
+    /**
+     * Returns the display name for Object Struct Types.
+     * @param paStructTypeName The name of the Object Struct Type
+     * @return The display name of the Object Struct Type
+     */
+    std::string getDisplayName(std::string_view paStructTypeName) {
+      size_t index = paStructTypeName.rfind(smSequenceReplaced);
+      if (index != std::string::npos) {
+        return std::string(paStructTypeName.substr(index + smSequenceReplaced.length()));
+      }
+      return std::string(paStructTypeName);
+    }
+  } // namespace
 
   COPC_UA_ObjectStruct_Helper::COPC_UA_ObjectStruct_Helper(COPC_UA_Layer &paLayer, COPC_UA_HandlerAbstract *paHandler) :
       mLayer(paLayer),
@@ -77,14 +165,15 @@ namespace forte::com_infra::opc_ua {
 
   UA_NodeId COPC_UA_ObjectStruct_Helper::checkAndCreateOPCUAStructType(CActionInfo &paActionInfo,
                                                                        CIEC_STRUCT &paStructType) {
+    std::string typeName = std::string(paStructType.getTypeNameID());
+    replaceStructNameElements(typeName, smSequenceToReplace, smSequenceReplaced);
     CActionInfo::CNodePairInfo nodePair(nullptr,
-                                        getStructBrowsePath(smStructTypesBrowsePath, paStructType.getTypeNameID()));
+                                        getBrowsePath(smStructTypesBrowsePath, typeName, mOpcuaTypeNamespaceIndex));
     UA_NodeId typeNodeId;
     if (isOPCUAObjectPresent(nodePair)) {
       UA_NodeId_copy(nodePair.getNodeId(), &typeNodeId);
       return typeNodeId;
-    } else if (createOPCUAStructType(paActionInfo, typeNodeId, std::string(paStructType.getTypeNameID()),
-                                     paStructType)) {
+    } else if (createOPCUAStructType(paActionInfo, typeNodeId, typeName, paStructType)) {
       return typeNodeId;
     }
     return UA_NODEID_NULL;
@@ -92,7 +181,7 @@ namespace forte::com_infra::opc_ua {
 
   bool COPC_UA_ObjectStruct_Helper::createOPCUAStructType(CActionInfo &paActionInfo,
                                                           UA_NodeId &paTypeNodeId,
-                                                          const std::string &paStructTypeName,
+                                                          const std::string_view paStructTypeName,
                                                           CIEC_STRUCT &paStructType) {
     COPC_UA_Local_Handler *localHandler = static_cast<COPC_UA_Local_Handler *>(mHandler);
     if (!localHandler) {
@@ -134,16 +223,17 @@ namespace forte::com_infra::opc_ua {
 
   bool COPC_UA_ObjectStruct_Helper::defineOPCUAStructTypeNode(UA_Server *paServer,
                                                               UA_NodeId &paNodeId,
-                                                              const std::string &paStructTypeName,
+                                                              const std::string_view paStructTypeName,
                                                               bool defaultCase) {
-    std::string structTypeName = paStructTypeName;
+    std::string structTypeName = std::string(paStructTypeName);
     if (defaultCase) {
       paNodeId = UA_NODEID_STRING(mOpcuaTypeNamespaceIndex, &structTypeName[0]);
     } else {
       paNodeId = UA_NODEID_NUMERIC(mOpcuaTypeNamespaceIndex, 0);
     }
+    std::string displayName{getDisplayName(paStructTypeName)};
     UA_ObjectTypeAttributes oAttr = UA_ObjectTypeAttributes_default;
-    oAttr.displayName = UA_LOCALIZEDTEXT(smEmptyString, &structTypeName[0]);
+    oAttr.displayName = UA_LOCALIZEDTEXT(smEmptyString, &displayName[0]);
     UA_StatusCode status = UA_Server_addObjectTypeNode(
         paServer, paNodeId, UA_NODEID_NUMERIC(0, UA_NS0ID_BASEOBJECTTYPE), UA_NODEID_NUMERIC(0, UA_NS0ID_HASSUBTYPE),
         UA_QUALIFIEDNAME(mOpcuaTypeNamespaceIndex, &structTypeName[0]), oAttr, nullptr, &paNodeId);
@@ -160,7 +250,7 @@ namespace forte::com_infra::opc_ua {
   bool COPC_UA_ObjectStruct_Helper::addOPCUAStructTypeComponents(UA_Server *paServer,
                                                                  UA_NodeId &paParentNodeId,
                                                                  CIEC_STRUCT &paStructType,
-                                                                 const std::string &paStructTypeName) {
+                                                                 const std::string_view paStructTypeName) {
     const StringId *structMemberNames = paStructType.elementNames();
     for (size_t i = 0; i < paStructType.getStructSize(); i++) {
       CIEC_ANY *structMember = paStructType.getMember(i);
@@ -195,7 +285,7 @@ namespace forte::com_infra::opc_ua {
 
   bool COPC_UA_ObjectStruct_Helper::addOPCUAStructTypeVariableComponent(UA_Server *paServer,
                                                                         UA_NodeId &paParentNodeId,
-                                                                        const std::string &paStructName,
+                                                                        const std::string_view paStructName,
                                                                         CIEC_ANY *paStructMember,
                                                                         const StringId paStructMemberNameId) {
     std::string structMemberName(paStructMemberNameId);
@@ -208,15 +298,16 @@ namespace forte::com_infra::opc_ua {
     vAttr.dataType = COPC_UA_Helper::getOPCUATypeFromAny(*paStructMember)->typeId;
 
     UA_NodeId memberNodeId;
+    std::string memberBrowsePathStr = structMemberName;
     if (paParentNodeId.identifierType == UA_NODEIDTYPE_STRING) {
-      std::string memberBrowsePathStr = getMemberBrowsePath(paStructName, structMemberName);
+      memberBrowsePathStr = getMemberBrowsePath(paStructName, structMemberName);
       memberNodeId = UA_NODEID_STRING_ALLOC(mOpcuaTypeNamespaceIndex, memberBrowsePathStr.c_str());
     } else {
       memberNodeId = UA_NODEID_NUMERIC(mOpcuaTypeNamespaceIndex, 0);
     }
     UA_StatusCode status =
         UA_Server_addVariableNode(paServer, memberNodeId, paParentNodeId, UA_NODEID_NUMERIC(0, UA_NS0ID_HASCOMPONENT),
-                                  UA_QUALIFIEDNAME(mOpcuaTypeNamespaceIndex, &structMemberName[0]),
+                                  UA_QUALIFIEDNAME(mOpcuaTypeNamespaceIndex, &memberBrowsePathStr[0]),
                                   UA_NODEID_NUMERIC(0, UA_NS0ID_BASEDATAVARIABLETYPE), vAttr, nullptr, nullptr);
 
     UA_NodeId_clear(&memberNodeId);
@@ -231,7 +322,7 @@ namespace forte::com_infra::opc_ua {
 
   bool COPC_UA_ObjectStruct_Helper::addOPCUAStructTypeObjectComponent(UA_Server *paServer,
                                                                       UA_NodeId &paParentNodeId,
-                                                                      const std::string &paStructName,
+                                                                      const std::string_view paStructName,
                                                                       CIEC_STRUCT &paStructMember,
                                                                       const StringId paStructMemberNameId,
                                                                       UA_NodeId &paMemberTypeNodeId) {
@@ -248,7 +339,7 @@ namespace forte::com_infra::opc_ua {
     }
     UA_StatusCode status = UA_Server_addObjectNode(
         paServer, objectNodeId, paParentNodeId, UA_NODEID_NUMERIC(0, UA_NS0ID_HASCOMPONENT),
-        UA_QUALIFIEDNAME(mOpcuaTypeNamespaceIndex, &structMemberName[0]), paMemberTypeNodeId, oAttr, nullptr, nullptr);
+        UA_QUALIFIEDNAME(mOpcuaTypeNamespaceIndex, &objectBrowsePath[0]), paMemberTypeNodeId, oAttr, nullptr, nullptr);
 
     if (status != UA_STATUSCODE_GOOD) {
       DEVLOG_ERROR(
@@ -409,11 +500,11 @@ namespace forte::com_infra::opc_ua {
   }
 
   std::shared_ptr<CActionInfo> COPC_UA_ObjectStruct_Helper::getCreateObjectActionInfo(CActionInfo &paActionInfo,
-                                                                                      std::string &paBrowsePath,
+                                                                                      std::string_view paBrowsePath,
                                                                                       CIEC_STRUCT &paStructType) {
     std::shared_ptr<CActionInfo> actionInfo =
         std::make_shared<CActionInfo>(mLayer, CActionInfo::UA_ActionType::eCreateObject, paActionInfo.getEndpoint());
-    std::string typeBrowsePath(getStructBrowsePath(smStructTypesBrowsePath, paStructType.getTypeNameID()));
+    std::string typeBrowsePath{getTypeBrowsePath(paStructType.getTypeNameID(), mOpcuaTypeNamespaceIndex)};
     auto &nodePairs = actionInfo->getNodePairInfo();
     nodePairs.emplace_back(nullptr, typeBrowsePath);
     bool isNodeIdPresent = paActionInfo.getNodePairInfo().begin()->getNodeId() != nullptr;
@@ -425,13 +516,13 @@ namespace forte::com_infra::opc_ua {
       UA_NodeId_copy(paActionInfo.getNodePairInfo().begin()->getNodeId(), nodeId);
     }
     mOpcuaObjectNamespaceIndex = nodeId->namespaceIndex;
-    nodePairs.emplace_back(nodeId, paBrowsePath);
+    nodePairs.emplace_back(nodeId, std::string(paBrowsePath));
     return actionInfo;
   }
 
   EComResponse
   COPC_UA_ObjectStruct_Helper::initializeMemberAction(CActionInfo &paActionInfo,
-                                                      std::string &paBrowsePath,
+                                                      std::string_view paBrowsePath,
                                                       CIEC_STRUCT &paStructType,
                                                       std::vector<std::shared_ptr<CActionInfo>> &paMemberActionInfos) {
     COPC_UA_Local_Handler *localHandler = static_cast<COPC_UA_Local_Handler *>(mHandler);
@@ -486,7 +577,6 @@ namespace forte::com_infra::opc_ua {
     COPC_UA_Local_Handler *localHandler = static_cast<COPC_UA_Local_Handler *>(mHandler);
     if (localHandler) {
       bool retVal = localHandler->isOPCUAObjectPresent(paNodePair);
-      ;
       return retVal;
     } else {
       DEVLOG_ERROR("[OPC UA OBJECT STRUCT HELPER]: Failed to get LocalHandler because LocalHandler is null!\n");
@@ -505,7 +595,7 @@ namespace forte::com_infra::opc_ua {
     }
   }
 
-  UA_NodeId *COPC_UA_ObjectStruct_Helper::createStringNodeIdFromBrowsepath(const std::string &paBrowsePath) {
+  UA_NodeId *COPC_UA_ObjectStruct_Helper::createStringNodeIdFromBrowsepath(const std::string_view paBrowsePath) {
     UA_NodeId *newNodeId = UA_NodeId_new();
     UA_NodeId_init(newNodeId);
     newNodeId->namespaceIndex = getNamespaceIndexFromBrowsepath(paBrowsePath);
@@ -514,75 +604,33 @@ namespace forte::com_infra::opc_ua {
     return newNodeId;
   }
 
-  UA_UInt16 COPC_UA_ObjectStruct_Helper::getNamespaceIndexFromBrowsepath(const std::string &paBrowsePath) {
-    util::CParameterParser mainParser(paBrowsePath.c_str(), '/');
-    size_t parsingResult = mainParser.parseParameters();
-    if (parsingResult > 0) {
-      size_t elementNameIndex = strcmp("", mainParser[parsingResult - 1]) != 0 ? parsingResult - 1 : parsingResult - 2;
-      std::string objectName(mainParser[elementNameIndex]);
-      util::CParameterParser nsIndexParser(objectName.c_str(), ':');
-      parsingResult = nsIndexParser.parseParameters();
-      if (parsingResult > 1) {
-        return static_cast<UA_UInt16>(util::strtoul(nsIndexParser[0], nullptr, 10));
-      }
-    } else {
-      DEVLOG_ERROR("[OPC UA HELPER]: Error while parsing FB browse path %s\n", paBrowsePath.c_str());
-    }
-    return COPC_UA_Local_Handler::scmDefaultBrowsenameNameSpace;
-  }
-
-  std::string COPC_UA_ObjectStruct_Helper::removeNamespaceIndicesFromBrowsePath(const std::string &paBrowsePath) {
-    std::stringstream ss;
-    util::CParameterParser mainParser(paBrowsePath.c_str(), '/');
-    size_t mainParserLength = mainParser.parseParameters();
-    for (size_t i = 0; i < mainParserLength; i++) {
-      std::string nodePair(mainParser[i]);
-      if (!nodePair.empty()) {
-        util::CParameterParser nsIndexParser(nodePair.c_str(), ':');
-        size_t parserLength = nsIndexParser.parseParameters();
-        size_t browsePathIndex = parserLength > 1 ? 1 : 0;
-        ss << '/' << nsIndexParser[browsePathIndex];
-      }
-    }
-    return ss.str();
-  }
-
-  std::string COPC_UA_ObjectStruct_Helper::getStructBrowsePath(const std::string &paPathPrefix,
-                                                               StringId paStructNameId) {
-    return getBrowsePath(paPathPrefix, std::string(paStructNameId), mOpcuaTypeNamespaceIndex);
-  }
-
-  std::string COPC_UA_ObjectStruct_Helper::getBrowsePath(const std::string &paPathPrefix,
-                                                         const std::string &paObjectName,
+  std::string COPC_UA_ObjectStruct_Helper::getBrowsePath(const std::string_view paPathPrefix,
+                                                         const std::string_view paObjectName,
                                                          UA_UInt16 paNamespaceIndex) {
     if (paObjectName.empty()) {
       return std::string();
     }
     std::stringstream ss;
     char buf[1000];
-    snprintf(buf, sizeof(buf), paPathPrefix.c_str(), paNamespaceIndex);
+    snprintf(buf, sizeof(buf), paPathPrefix.data(), paNamespaceIndex);
     ss << buf << paObjectName;
     return ss.str();
   }
 
-  std::string COPC_UA_ObjectStruct_Helper::getStructMemberBrowsePathWithNSIndex(const std::string &paBrowsePathPrefix,
-                                                                                const StringId structMemberNameId) {
+  std::string
+  COPC_UA_ObjectStruct_Helper::getStructMemberBrowsePathWithNSIndex(const std::string_view paBrowsePathPrefix,
+                                                                    const StringId structMemberNameId) {
     std::stringstream ss;
     char buf[100];
-    snprintf(buf, sizeof(buf), smMemberNamespaceIndex.c_str(), mOpcuaObjectNamespaceIndex);
+    snprintf(buf, sizeof(buf), smMemberNamespaceIndex.data(), mOpcuaObjectNamespaceIndex);
     ss << paBrowsePathPrefix << buf << structMemberNameId.get();
     return ss.str();
   }
 
-  std::string COPC_UA_ObjectStruct_Helper::getMemberBrowsePath(const std::string &paBrowsePathPrefix,
-                                                               const std::string &paMemberName) {
+  std::string COPC_UA_ObjectStruct_Helper::getMemberBrowsePath(const std::string_view paBrowsePathPrefix,
+                                                               const std::string_view paMemberName) {
     std::stringstream ss;
     ss << paBrowsePathPrefix << "/" << paMemberName;
     return ss.str();
-  }
-
-  std::string COPC_UA_ObjectStruct_Helper::getStructTypeName(bool paIsPublisher) {
-    CIEC_ANY *type = paIsPublisher ? mLayer.getCommFB()->getSDs()[0] : mLayer.getCommFB()->getRDs()[0];
-    return (type != nullptr) ? std::string(type->unwrap().getTypeNameID()) : std::string();
   }
 } // namespace forte::com_infra::opc_ua
